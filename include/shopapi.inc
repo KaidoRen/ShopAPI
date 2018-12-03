@@ -8,7 +8,7 @@
 
 enum
 {
-    SHOP_HANDLED,      // skip real function
+    SHOP_HANDLED = 1,  // skip real function
     SHOP_CONTINUE,     // take no action
     SHOP_BREAK         // skip all other forwards and real function
 };
@@ -63,7 +63,7 @@ native bool: ShopDisableEvent(ShopEvent: event);
 * @return              Item id
 * @error               -1 if creation failed
 */
-native ShopItem: ShopPushItem(const name[32], const price, const access = ADMIN_ALL, const flags = IF_None, const bool: discounts = true, const bool: inventory = false, const strkey[32] = "");
+native ShopItem: ShopPushItem(const name[], const price, const access = ADMIN_USER, const flags = IF_None, const bool: discounts = true, const bool: inventory = false, const strkey[32] = "");
 
 /**
 * Delete item.
@@ -87,7 +87,7 @@ native ShopDestroyItem(const ShopItem: item);
 *
 * @return              Item exists (true/false)
 */
-native bool: ShopGetItemInfo(const ShopItem: item, const &price, const name[] = "", const namelen = 0, const strkey[] = "", const keylen = 0, const &access = 0, const &flags = 0);
+native bool: ShopGetItemInfo(const ShopItem: item, const &price, const &access = 0, const name[] = "", const namelen = 0, const strkey[] = "", const keylen = 0, const &flags = 0);
 
 /**
  * Find item by string key.

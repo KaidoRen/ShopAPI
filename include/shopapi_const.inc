@@ -9,7 +9,8 @@ enum (<<=1)
     IF_OnlyAlive,
     IF_OnlyDead,
     IF_OnlyCtTeam,
-    IF_OnlyTTeam
+    IF_OnlyTTeam,
+    IF_OnlySpectator
 };
 
 enum BuyState
@@ -17,7 +18,7 @@ enum BuyState
     Buy_NotEnoughMoney,
     Buy_PlayerDead,
     But_PlayerAlive,
-    Buy_Successful
+    Buy_OK
 };
 
 enum ShopFunc
@@ -31,14 +32,14 @@ enum ShopFunc
 
     /*
     * Description:        Called when buying any item
-    * Handle params:      (const player, const item, BuyState: buyState)
+    * Handle params:      (const player, const ShopItem: item, BuyState: buyState)
     * Hook params:        (const ShopFunc: funcid, const handle[])
     */
     Shop_ItemsBuy,
 
     /*
     * Description:        Called when buying the specified item
-    * Handle params:      (const player, const item, BuyState: buyState)
+    * Handle params:      (const player, const ShopItem: item, BuyState: buyState)
     * Hook params:        (const ShopFunc: funcid, const item, const handle[])
     */
     Shop_ItemBuy
