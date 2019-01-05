@@ -64,17 +64,16 @@ public Shop_ItemBuyHandle(const player, const ShopItem: item, const BuyState: bu
         }
 
         case Buy_OK: {
+            client_print_color(player, print_team_default, "%s Вы купили предмет\4 %s\1 за\4 %i\1.", CHAT_PREFIX, szName, iCost);
+
             if (item == g_iItems[SI_Gravity][ItemID]) {
                 set_pev(player, pev_gravity, GRAVITY_AMOUNT);
-                client_print_color(player, print_team_default, "%s Вы купили предмет\4 %s\1 за\4 %i\1.", CHAT_PREFIX, szName, iCost);
             }
             else if (item == g_iItems[SI_Speed][ItemID]) {
                 set_pev(player, pev_maxspeed, SPEED_AMOUNT);
-                client_print_color(player, print_team_default, "%s Вы купили предмет\4 %s\1 за\4 %i\1.", CHAT_PREFIX, szName, iCost);
             }
             else if (item == g_iItems[SI_HP][ItemID]) {
                 set_pev(player, pev_health, HEALTH_AMOUNT);
-                client_print_color(player, print_team_default, "%s Вы купили предмет\4 %s\1 за\4 %i\1.", CHAT_PREFIX, szName, iCost);
             }
         }
     }

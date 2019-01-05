@@ -28,10 +28,11 @@ enum ShopItem
 *
 * @param func           The function to hook
 * @param handle         The forward to call
+* @param this           Only for items created by the current plugin
 *
 * @return               Returns a event handle. Use ShopDisableEvent/ShopEnableEvent to toggle the forward
 */
-native ShopEvent: ShopRegisterEvent(const ShopFunc: func, const handle[]);
+native ShopEvent: ShopRegisterEvent(const ShopFunc: func, const handle[], const bool: this = true);
 
 
 /**

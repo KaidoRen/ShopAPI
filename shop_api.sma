@@ -15,10 +15,11 @@ enum any: ItemProperties
     ItemStrKey[SHOP_MAX_KEY_LENGTH],
     ItemName[SHOP_MAX_ITEM_NAME_LENGTH],
     ItemCost,
+    ItemPlugin,
     ItemAccess,
-    ItemFlag: ItemFlags,
     bool: ItemInventory,
-    bool: ItemDiscounts
+    bool: ItemDiscounts,
+    ItemFlag: ItemFlags
 };
 
 new Array: g_pItemsVec, Array: g_pForwardsVec;
@@ -123,10 +124,11 @@ SelectShopItem(const player, const item)
 enum any: ForwardProperties
 {
     ShopFunc: ForwardFunc,
+    bool: ForwardSingle,
+    bool: ForwardDisable,
     ForwardHandle,
     ForwardItem,
-    bool: ForwardSingle,
-    bool: ForwardDisable
+    ForwardPlugin
 };
 
 new const LOG_PREFIX[] = "[ShopAPI]";
@@ -150,7 +152,7 @@ public plugin_natives()
 
 public NativeHandle_RegisterEvent(amxx)
 {
-    enum { param_func = 1, param_handle };
+    enum { param_func = 1, param_handle, param_byplugin };
 
     new const ShopFunc: iFuncID = ShopFunc: get_param(param_func);
     new sForwardData[ForwardProperties], szHandle[32];
@@ -171,7 +173,8 @@ public NativeHandle_RegisterEvent(amxx)
         }
     }
 
-    sForwardData[ForwardFunc] = iFuncID;
+    sForwardData[ForwardFunc]   = iFuncID;
+    sForwardData[ForwardPlugin] = get_param(param_byplugin) ? amxx : 0;
     return ArrayPushArray(g_pForwardsVec, sForwardData, sizeof sForwardData);
 }
 
@@ -230,6 +233,7 @@ public NativeHandle_PushItem(amxx)
         return INVALID_HANDLE;
     }
 
+    sItemData[ItemPlugin]       = amxx;
     sItemData[ItemCost]         = get_param(param_cost);
     sItemData[ItemAccess]       = get_param(param_access);
     sItemData[ItemFlags]        = ItemFlag: get_param(param_flags);
@@ -330,11 +334,20 @@ stock bool: ExecuteEventsHandle(ShopFunc: func, bool: single, any: ...)
 {
     enum { param_player = 2, param_item, param_state };
 
-    new sForwardData[ForwardProperties], iIter, iResponse, bool: bState = true;
+    new sForwardData[ForwardProperties], sItemData[ItemProperties], iIter, iResponse, bool: bState = true;
+
+    if (numargs() > param_item) {
+        ArrayGetArray(g_pItemsVec, getarg(param_item), sItemData);
+    }
+
     while (iIter < ArraySize(g_pForwardsVec)) {
         ArrayGetArray(g_pForwardsVec, iIter++, sForwardData);
 
         if (sForwardData[ForwardDisable] || sForwardData[ForwardFunc] != func || sForwardData[ForwardSingle] != single) {
+            continue;
+        }
+
+        if (sForwardData[ForwardPlugin] && sForwardData[ForwardPlugin] != sItemData[ItemPlugin]) {
             continue;
         }
 
