@@ -3,7 +3,10 @@
 #endif
 #define _shopapi_const_included
 
-enum (<<=1)
+#define SHOP_MAX_ITEM_NAME_LENGTH 128
+#define SHOP_MAX_KEY_LENGTH 32
+
+enum ItemFlag (<<=1)
 {
     IF_None = 1,
     IF_OnlyAlive,
@@ -24,23 +27,26 @@ enum BuyState
 enum ShopFunc
 {
     /*
-    * Description:        Called when the shop menu is opened
-    * Handle params:      (const player)
-    * Hook params:        (const ShopFunc: funcid, const handle[])
+    * Description:          Called when the shop menu is opened
+    * Handle params:        (const player)
     */
     Shop_OpenMenu,
 
     /*
-    * Description:        Called when buying any item
-    * Handle params:      (const player, const ShopItem: item, BuyState: buyState)
-    * Hook params:        (const ShopFunc: funcid, const handle[])
+    * Description:          Called before adding an items to the menu
+    * Handle params:        (const player, const ShopItem: item)
     */
-    Shop_ItemsBuy,
+    Shop_AddItemToMenu,
 
     /*
-    * Description:        Called when buying the specified item
-    * Handle params:      (const player, const ShopItem: item, BuyState: buyState)
-    * Hook params:        (const ShopFunc: funcid, const item, const handle[])
+    * Description:          Called before enable pressing for item
+    * Handle params:        (const player, const ShopItem: item)
     */
-    Shop_ItemBuy
+    Shop_ItemEnablePressing,
+
+    /*
+    * Description:          Called when buying any item
+    * Handle params:        (const player, const ShopItem: item, BuyState: buyState)
+    */
+    Shop_ItemBuy,
 };
