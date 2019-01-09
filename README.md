@@ -10,3 +10,6 @@
 
 # Documentation
 All documentation is available in the [wiki](https://github.com/KaidoRen/ShopAPI/wiki) section, in two languages.
+
+# License
+ShopAPI is under the [![GitHub license](https://img.shields.io/github/license/KaidoRen/ShopAPI.svg?longCache=true&style=flat-square)](https://github.com/KaidoRen/ShopAPI/blob/master/LICENSE)
