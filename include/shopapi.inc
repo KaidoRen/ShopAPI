@@ -81,7 +81,7 @@ native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_USE
 /**
 * Delete item.
 *
-* @param name           Item id
+* @param item           Item id
 *
 * @noreturn
 */
@@ -90,10 +90,11 @@ native ShopDestroyItem(const ShopItem: item);
 /**
 * Retrieves info about a item.
 *
-* @param name           Item id
-* @param cost           Item cost
+* @param item           Item id
 * @param name           Item name buffer
 * @param namelen        Item name buffer len
+* @param cost           Variable to store cost to
+* @param access         Variable to store access flags to
 * @param strkey         Item string key buffer
 * @param keylen         Item string key buffer len
 *
