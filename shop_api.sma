@@ -106,8 +106,8 @@ SelectShopItem(const player, const item)
         ExecuteEventsHandle(Shop_ItemBuy, true, player, item, Buy_PlayerDead);
     }
     else if (sItemData[ItemFlags] & IF_OnlyDead && is_user_alive(player)) {
-        ExecuteEventsHandle(Shop_ItemBuy, false, player, item, But_PlayerAlive);
-        ExecuteEventsHandle(Shop_ItemBuy, true, player, item, But_PlayerAlive);
+        ExecuteEventsHandle(Shop_ItemBuy, false, player, item, Buy_PlayerAlive);
+        ExecuteEventsHandle(Shop_ItemBuy, true, player, item, Buy_PlayerAlive);
     }
     else {
         new bSuccess = ExecuteEventsHandle(Shop_ItemBuy, false, player, item, Buy_OK);

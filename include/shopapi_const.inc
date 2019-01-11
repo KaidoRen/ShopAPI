@@ -20,7 +20,7 @@ enum BuyState
 {
     Buy_NotEnoughMoney,
     Buy_PlayerDead,
-    But_PlayerAlive,
+    Buy_PlayerAlive,
     Buy_OK
 };
 
