@@ -1,0 +1,24 @@
+language: c
+
+env:
+    - AMXMODX_URL=https://www.amxmodx.org/amxxdrop/1.9/amxmodx-1.9.0-git5235-base-linux.tar.gz
+
+matrix:
+    fast_finish: true
+    allow_failures:
+    - env: AMXMODX_URL=https://www.amxmodx.org/amxxdrop/1.9/amxmodx-1.9.0-git5235-base-linux.tar.gz
+
+before_install:
+    - sudo apt-get update
+    - sudo apt-get install gcc-multilib lib32stdc++6
+
+before_script:
+    - wget -c $AMXMODX_URL -O - | tar -xz
+    - rm addons/amxmodx/scripting/*.sma
+    - mv include/* addons/amxmodx/scripting/include
+    - mv *.sma addons/amxmodx/scripting
+    - cd addons/amxmodx/scripting
+    - chmod +x amxxpc32.so compile.sh
+
+script:
+    - ./compile.sh
