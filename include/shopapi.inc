@@ -76,7 +76,7 @@ native bool: ShopDisableEvent(ShopEvent: event);
 * @return               Index of the new item
 * @error                -1 if creation failed
 */
-native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_USER, const ItemFlag: flags = IF_None, const bool: discounts = true, const bool: inventory = false, const strkey[32] = "");
+native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_USER, const ItemFlag: flags = IF_None, const bool: discounts = true, const bool: inventory = false, const strkey[SHOP_MAX_KEY_LENGTH] = "");
 
 /**
 * Delete item.
@@ -120,4 +120,4 @@ native bool: ShopGetItemInfo(const ShopItem: item, const name[] = "", const name
  * @return              Item id
  * @error               -1 if can't find
  */
-native ShopItem: ShopFindItemByKey(strkey[32]);
+native ShopItem: ShopFindItemByKey(strkey[SHOP_MAX_KEY_LENGTH]);
