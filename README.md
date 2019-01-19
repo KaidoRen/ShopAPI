@@ -5,6 +5,7 @@
 |---------|-------|--- |
 |❌      | ✔️    |✔️  | 
 
+[![Build Status](https://travis-ci.org/KaidoRen/ShopAPI.svg?branch=master)](https://travis-ci.org/KaidoRen/ShopAPI)
 [![GitHub issues](https://img.shields.io/github/issues/KaidoRen/ShopAPI.svg?longCache=true&style=flat-square)](https://github.com/KaidoRen/ShopAPI/issues)
 [![GitHub stars](https://img.shields.io/github/stars/KaidoRen/ShopAPI.svg?longCache=true&style=flat-square)](https://github.com/KaidoRen/ShopAPI/stargazers)
 
