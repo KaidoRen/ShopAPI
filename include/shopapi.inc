@@ -76,7 +76,7 @@ native bool: ShopDisableEvent(ShopEvent: event);
 * @return               Index of the new item
 * @error                -1 if creation failed
 */
-native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_USER, const ItemFlag: flags = IF_None, const bool: discounts = true, const bool: inventory = false, const strkey[SHOP_MAX_KEY_LENGTH] = "");
+native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_ALL, const ItemFlag: flags = IF_None, const bool: discounts = true, const bool: inventory = false, const strkey[SHOP_MAX_KEY_LENGTH] = "");
 
 /**
 * Delete item.
