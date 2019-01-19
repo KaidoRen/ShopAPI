@@ -121,3 +121,25 @@ native bool: ShopGetItemInfo(const ShopItem: item, const name[] = "", const name
  * @error               -1 if can't find
  */
 native ShopItem: ShopFindItemByKey(strkey[SHOP_MAX_KEY_LENGTH]);
+
+/**
+ * Checks existence a item in inventory of player.
+ *
+ * @param player        Player id
+ * @param item          Item id
+ *
+ * @return              Item exists in inventory (true/false)
+ */
+native bool: ShopHasUserItem(const player, const ShopItem: item);
+
+
+/**
+ * Removes item in inventory of player.
+ *
+ * @param player        Player id
+ * @param item          Item id
+ *
+ * @return              true if the item was removed, false if
+ *                      the item doesn't exists in inventory
+ */
+native bool: ShopRemoveUserItem(const player, const ShopItem: item);
