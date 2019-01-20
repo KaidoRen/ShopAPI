@@ -22,10 +22,16 @@ enum any: ItemProperties
     ItemFlag: ItemFlags
 };
 
+enum any: PlayerDataProperties
+{
+    PlayerCurrentPage,
+    Array: PlayerCurrentMenu,
+    PlayerSelectItem[ITEMS_ON_PAGE_WITHOUT_PAGINATOR + 1],
+    Array: PlayerInventory
+};
+
 new Array: g_pItemsVec, Array: g_pForwardsVec;
-new g_iPlayerMenuPage[MAX_PLAYERS + 1], 
-Array: g_iPlayerCurrentMenu[MAX_PLAYERS + 1],
-g_iPlayerSelectItem[MAX_PLAYERS][ITEMS_ON_PAGE_WITHOUT_PAGINATOR + 1];
+new g_sPlayerData[MAX_PLAYERS + 1][PlayerDataProperties];
 
 public plugin_init()
 {
@@ -38,13 +44,18 @@ public plugin_init()
     register_menucmd(register_menuid("SHOP_API_MENU"), MENU_KEYS_ALL, "MenuHandle_ShopMenu");
 }
 
+public client_disconnected(player)
+{
+    g_sPlayerData[player][PlayerInventory] && ArrayDestroy(g_sPlayerData[player][PlayerInventory]);
+}
+
 public CmdHandle_ShopMenu(const player)
 {
     if (!ExecuteEventsHandle(Shop_OpenMenu, false, player)) {
         return PLUGIN_HANDLED;
     }
 
-    CreateMenu(player, g_iPlayerMenuPage[player] = 0);
+    CreateMenu(player, g_sPlayerData[player][PlayerCurrentPage] = 0);
 
     return PLUGIN_HANDLED;
 }
@@ -58,9 +69,9 @@ public MenuHandle_ShopMenu(const player, const key)
 
     switch (key) {
         case KEY_EXIT: {}
-        case KEY_BACK: bPagination ? CreateMenu(player, --g_iPlayerMenuPage[player]) : SelectShopItem(player, g_iPlayerSelectItem[player][key]);
-        case KEY_NEXT: bPagination ? CreateMenu(player, ++g_iPlayerMenuPage[player]) : SelectShopItem(player, g_iPlayerSelectItem[player][key]);
-        default: SelectShopItem(player, g_iPlayerSelectItem[player][key]);
+        case KEY_BACK: bPagination ? CreateMenu(player, --g_sPlayerData[player][PlayerCurrentPage]) : SelectShopItem(player, g_sPlayerData[player][PlayerSelectItem][key]);
+        case KEY_NEXT: bPagination ? CreateMenu(player, ++g_sPlayerData[player][PlayerCurrentPage]) : SelectShopItem(player, g_sPlayerData[player][PlayerSelectItem][key]);
+        default: SelectShopItem(player, g_sPlayerData[player][PlayerSelectItem][key]);
     }
 
     MenuDestroy(player);
@@ -69,7 +80,7 @@ public MenuHandle_ShopMenu(const player, const key)
 CreateMenu(const player, const page)
 {
     new sItemData[ItemProperties];
-    g_iPlayerCurrentMenu[player] = CreateMenuItemsStorage();
+    g_sPlayerData[player][PlayerCurrentMenu] = CreateMenuItemsStorage();
     
     for (new i; i < ArraySize(g_pItemsVec); i++) {
         if (!ArrayGetArray(g_pItemsVec, i, sItemData)) {
@@ -115,6 +126,14 @@ SelectShopItem(const player, const item)
 
         if (bSuccess) {
             cs_set_user_money(player, cs_get_user_money(player) - sItemData[ItemCost]);
+
+            if (sItemData[ItemInventory]) {
+                if (!g_sPlayerData[player][PlayerInventory]) {
+                    g_sPlayerData[player][PlayerInventory] = ArrayCreate();
+                }
+
+                ArrayPushCell(g_sPlayerData[player][PlayerInventory], item);
+            }
         }
     }
 }
@@ -138,16 +157,28 @@ public plugin_natives()
     g_pItemsVec     = ArrayCreate(ItemProperties);
     g_pForwardsVec  = ArrayCreate(ForwardProperties);
 
-    register_native("ShopRegisterEvent",            "NativeHandle_RegisterEvent");
-    register_native("ShopRegisterEventFromItem",    "NativeHandle_RegisterEventFromItem");
-    register_native("ShopDisableEvent",             "NativeHandle_DisableEvent");
-    register_native("ShopEnableEvent",              "NativeHandle_EnableEvent");
+    // (ForwardNatives)
+    {
+        register_native("ShopRegisterEvent",            "NativeHandle_RegisterEvent");
+        register_native("ShopRegisterEventFromItem",    "NativeHandle_RegisterEventFromItem");
+        register_native("ShopDisableEvent",             "NativeHandle_DisableEvent");
+        register_native("ShopEnableEvent",              "NativeHandle_EnableEvent");
+    }
 
-    register_native("ShopPushItem",                 "NativeHandle_PushItem");
-    register_native("ShopDestroyItem",              "NativeHandle_DestroyItem");
-    register_native("ShopGetItemInfo",              "NativeHandle_GetItemInfo");
-    register_native("ShopGetItemFlags",             "NativeHandle_GetItemFlags");
-    register_native("ShopFindItemByKey",            "NativeHandle_FindItemByKey");
+    // (ItemNatives)
+    {
+        register_native("ShopPushItem",                 "NativeHandle_PushItem");
+        register_native("ShopDestroyItem",              "NativeHandle_DestroyItem");
+        register_native("ShopGetItemInfo",              "NativeHandle_GetItemInfo");
+        register_native("ShopGetItemFlags",             "NativeHandle_GetItemFlags");
+        register_native("ShopFindItemByKey",            "NativeHandle_FindItemByKey");
+    }
+
+    // (PlayerNatives)
+    {
+        register_native("ShopHasUserItem",              "NativeHandle_HasUserItem");
+        register_native("ShopRemoveUserItem",           "NativeHandle_RemoveUserItem");
+    }
 }
 
 public NativeHandle_RegisterEvent(amxx)
@@ -297,6 +328,29 @@ public NativeHandle_FindItemByKey(amxx)
     return ArrayFindString(g_pItemsVec, szStringKey);
 }
 
+public bool: NativeHandle_HasUserItem(amxx)
+{
+    enum { param_player = 1, param_item };
+    
+    return FindItemInInventory(get_param(param_player), get_param(param_item)) > INVALID_HANDLE;
+}
+
+public bool: NativeHandle_RemoveUserItem(amxx)
+{
+    enum { param_player = 1, param_item };
+
+    new const iPlayer = get_param(param_player);
+    new const Array: pInventory = g_sPlayerData[iPlayer][PlayerInventory];
+    new const iFindItem = FindItemInInventory(iPlayer, get_param(param_item));
+
+    if (iFindItem <= INVALID_HANDLE) {
+        return false;
+    }
+
+    ArrayDeleteItem(pInventory, iFindItem);
+    return true;
+}
+
 /**************** END API ******************/
 
 /**************** UTILS ********************/
@@ -316,7 +370,7 @@ stock GetHandle(amxx, param, buffer[], len)
     return true;
 }
 
-stock bool: ToggleState(forwardid, const bool: forwardstate)
+stock bool: ToggleState(const forwardid, const bool: forwardstate)
 {
     if (0 > forwardid >= ArraySize(g_pForwardsVec)) {
         log_error(AMX_ERR_NATIVE, "%s Invalid forward id (%i).", LOG_PREFIX, forwardid);
@@ -328,6 +382,17 @@ stock bool: ToggleState(forwardid, const bool: forwardstate)
     sForwardData[ForwardDisable] = forwardstate;
     
     return bool: ArraySetArray(g_pForwardsVec, forwardid, sForwardData);
+}
+
+stock FindItemInInventory(const player, const item)
+{
+    new const Array: pInventory = g_sPlayerData[player][PlayerInventory];
+
+    if (!pInventory) {
+        return INVALID_HANDLE;
+    }
+
+    return ArrayFindValue(pInventory, item);
 }
 
 stock bool: ExecuteEventsHandle(ShopFunc: func, bool: single, any: ...)
@@ -392,7 +457,7 @@ stock Array: CreateMenuItemsStorage()
 
 stock MenuPushItem(player, item)
 {
-    ArrayPushCell(g_iPlayerCurrentMenu[player], item);
+    ArrayPushCell(g_sPlayerData[player][PlayerCurrentMenu], item);
 }
 
 #define DisableItem(%0,%1,%2) %0    &= ~(1 << %1); RemoveColorSymbols(%2, charsmax(%2))
@@ -403,11 +468,11 @@ stock MenuDisplay(const player, page)
     }
 
     new szMenu[512], bitsKeys = MENU_KEY_0, iStart, iEnd,
-    iIter, iPages, iItem, iItems = ArraySize(g_iPlayerCurrentMenu[player]), sItemData[ItemProperties],
+    iIter, iPages, iItem, iItems = ArraySize(g_sPlayerData[player][PlayerCurrentMenu]), sItemData[ItemProperties],
     iItemsOnPage = iItems > ITEMS_ON_PAGE_WITHOUT_PAGINATOR ? ITEMS_ON_PAGE_WITH_PAGINATOR : ITEMS_ON_PAGE_WITHOUT_PAGINATOR;
 
     if ((iStart = page * iItemsOnPage) >= iItems) {
-        iStart = page = g_iPlayerMenuPage[player] = 0;
+        iStart = page = g_sPlayerData[player][PlayerCurrentPage] = 0;
     }
 
     if ((iEnd = iStart + iItemsOnPage) > iItems) {
@@ -427,11 +492,15 @@ stock MenuDisplay(const player, page)
     }
 
     while (iStart < iEnd) {
-        ArrayGetArray(g_pItemsVec, iItem = ArrayGetCell(g_iPlayerCurrentMenu[player], iStart++), sItemData);
+        ArrayGetArray(g_pItemsVec, iItem = ArrayGetCell(g_sPlayerData[player][PlayerCurrentMenu], iStart++), sItemData);
 
         if (~get_user_flags(player) & sItemData[ItemAccess]) {
             DisableItem(bitsKeys, iIter, sItemData[ItemName]);
             add(szMenu, charsmax(szMenu), fmt("\\d[%i] %s \\r *\\R$%i\n", iIter + 1, sItemData[ItemName], sItemData[ItemCost]));
+        }
+        else if (sItemData[ItemInventory] && FindItemInInventory(player, iItem) > INVALID_HANDLE) {
+            DisableItem(bitsKeys, iIter, sItemData[ItemName]);
+            add(szMenu, charsmax(szMenu), fmt("\\d[%i] %s \\r [+]\\d \\R$%i\n", iIter + 1, sItemData[ItemName], sItemData[ItemCost]));
         }
         else if (!ExecuteEventsHandle(Shop_ItemEnablePressing, false, player, iItem) || !ExecuteEventsHandle(Shop_ItemEnablePressing, true, player, iItem)) {
             DisableItem(bitsKeys, iIter, sItemData[ItemName]);
@@ -446,7 +515,7 @@ stock MenuDisplay(const player, page)
             add(szMenu, charsmax(szMenu), "\n");
         }
 
-        g_iPlayerSelectItem[player][iIter++] = iItem;
+        g_sPlayerData[player][PlayerSelectItem][iIter++] = iItem;
     }
 
     if (iItems > iItemsOnPage) {
@@ -463,7 +532,7 @@ stock MenuDisplay(const player, page)
 
 stock MenuDestroy(player)
 {
-    ArrayDestroy(g_iPlayerCurrentMenu[player]);
+    ArrayDestroy(g_sPlayerData[player][PlayerCurrentMenu]);
 }
 
 /**************** END MENU SYSTEM **********/
