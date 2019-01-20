@@ -340,14 +340,13 @@ public bool: NativeHandle_RemoveUserItem(amxx)
     enum { param_player = 1, param_item };
 
     new const iPlayer = get_param(param_player);
-    new const Array: pInventory = g_sPlayerData[iPlayer][PlayerInventory];
     new const iFindItem = FindItemInInventory(iPlayer, get_param(param_item));
 
     if (iFindItem <= INVALID_HANDLE) {
         return false;
     }
 
-    ArrayDeleteItem(pInventory, iFindItem);
+    ArrayDeleteItem(g_sPlayerData[iPlayer][PlayerInventory], iFindItem);
     return true;
 }
 
