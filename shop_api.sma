@@ -161,6 +161,12 @@ enum any: ForwardProperties
 
 new const LOG_PREFIX[] = "[ShopAPI]";
 
+#define CHECK_PLAYER(%0) \
+    if (!(0 < %0 <= MaxClients)) { \
+        log_error(AMX_ERR_NATIVE, "%s Player out of range (%i)", LOG_PREFIX, %0); \
+        return any: PLUGIN_CONTINUE; \
+    }
+
 public plugin_natives()
 {
     g_pItemsVec     = ArrayCreate(ItemProperties);
@@ -346,8 +352,12 @@ public NativeHandle_FindItemByKey(amxx)
 public bool: NativeHandle_HasUserItem(amxx)
 {
     enum { param_player = 1, param_item };
+
+    new const iPlayer = get_param(param_player);
+
+    CHECK_PLAYER(iPlayer)
     
-    return FindItemInInventory(get_param(param_player), get_param(param_item)) > INVALID_HANDLE;
+    return FindItemInInventory(iPlayer, get_param(param_item)) > INVALID_HANDLE;
 }
 
 public bool: NativeHandle_RemoveUserItem(amxx)
@@ -355,6 +365,9 @@ public bool: NativeHandle_RemoveUserItem(amxx)
     enum { param_player = 1, param_item };
 
     new const iPlayer = get_param(param_player);
+
+    CHECK_PLAYER(iPlayer)
+
     new const iFindItem = FindItemInInventory(iPlayer, get_param(param_item));
 
     if (iFindItem <= INVALID_HANDLE) {
@@ -370,6 +383,9 @@ public bool: NativeHandle_SetUserDiscount(amxx)
     enum { param_player = 1, param_discount };
 
     new const iPlayer = get_param(param_player);
+
+    CHECK_PLAYER(iPlayer)
+
     new const iDiscount = get_param(param_discount);
 
     if (0 /* min percent */ > iDiscount > 100 /* max percent */) {
@@ -387,6 +403,9 @@ public NativeHandle_GetItemCostForUser(amxx)
     enum { param_player = 1, param_item };
 
     new const iPlayer = get_param(param_player);
+
+    CHECK_PLAYER(iPlayer)
+
     new const iItem = get_param(param_item);
 
     new sItemData[ItemProperties];
