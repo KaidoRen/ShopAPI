@@ -65,16 +65,18 @@ public client_putinserver(player)
 
 public Shop_ItemBuyHandle(const player, const ShopItem: item, const BuyState: buyState)
 {
-    new szName[SHOP_MAX_ITEM_NAME_LENGTH], iCost;
-    ShopGetItemInfo(item, szName, charsmax(szName), iCost);
+    new const szName[SHOP_MAX_ITEM_NAME_LENGTH], iDiscountCost = ShopGetItemCostForUser(player, item);
+    ShopGetItemInfo(item, szName, charsmax(szName));
 
     switch (buyState) {
         case Buy_NotEnoughMoney: {
-            client_print_color(player, print_team_default, "%s Для покупки не хватает\4 %i\1$.", CHAT_PREFIX, iCost - cs_get_user_money(player));
+            // For purchase is missing N$
+            client_print_color(player, print_team_default, "%s Для покупки не хватает\4 %i\1$.", CHAT_PREFIX, iDiscountCost - cs_get_user_money(player));
         }
 
         case Buy_OK: {
-            client_print_color(player, print_team_default, "%s Вы купили предмет\4 %s\1 за\4 %i\1.", CHAT_PREFIX, szName, iCost);
+            // Successfully purchase
+            client_print_color(player, print_team_default, "%s Вы купили предмет\4 %s\1 за\4 %i\1.", CHAT_PREFIX, szName, iDiscountCost);
 
             if (item == g_iItems[SI_Gravity][ItemID]) {
                 set_pev(player, pev_gravity, GRAVITY_AMOUNT);

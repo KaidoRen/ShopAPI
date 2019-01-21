@@ -1,0 +1,15 @@
+[en]
+SHOP_MENU_TITLE = AMXX Shop^nYour discount: \r:discount%%^n\wYour money: \r:money\w$
+SHOP_NO_AVAILABLE_ITEMS = Sorry, but there are no^nproducts available for you.
+
+SHOP_EXIT_MENU = Exit
+SHOP_BACK_MENU = Back
+SHOP_NEXT_MENU = Next
+
+[ru]
+SHOP_MENU_TITLE = AMXX Shop^nВаша скидка: \r:discount%%^n\wВаши деньги: \r:money\w$
+SHOP_NO_AVAILABLE_ITEMS = \dИзвините, но доступных для Вас^nтоваров пока нет :(
+
+SHOP_EXIT_MENU = Выход
+SHOP_BACK_MENU = Назад
+SHOP_NEXT_MENU = Далее

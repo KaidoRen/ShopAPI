@@ -43,6 +43,8 @@ public plugin_init()
 	
     const MENU_KEYS_ALL = 1023;
     register_menucmd(register_menuid("SHOP_API_MENU"), MENU_KEYS_ALL, "MenuHandle_ShopMenu");
+
+    register_dictionary("shop.txt");
 }
 
 public client_disconnected(player)
@@ -526,7 +528,7 @@ stock MenuDisplay(const player, page)
         iEnd = iItems;
     }
 
-    formatex(szMenu, charsmax(szMenu), "AMXX Shop\nВаша скидка: \\r%i%\\w\nВаши деньги: \\r%i\\w$", iDiscount, cs_get_user_money(player));
+    GetLocalizeTitle(szMenu, charsmax(szMenu), player, iDiscount, cs_get_user_money(player));
 
     if ((iPages = iItems / iItemsOnPage + (iItems % iItemsOnPage ? 1 : 0)) > 1) {
         add(szMenu, charsmax(szMenu), fmt("\\R%i/%i", page + 1, iPages));
@@ -535,7 +537,7 @@ stock MenuDisplay(const player, page)
     add(szMenu, charsmax(szMenu), "\n\n");
 
     if (!iItems) {
-        add(szMenu, charsmax(szMenu), "\\dИзвините, но доступных для Вас\nтоваров пока нет :(");
+        add(szMenu, charsmax(szMenu), fmt("%L", player, "SHOP_NO_AVAILABLE_ITEMS"));
     }
 
     while (iStart < iEnd) {
@@ -570,14 +572,25 @@ stock MenuDisplay(const player, page)
 
     if (iItems > iItemsOnPage) {
         page ? (bitsKeys |= MENU_KEY_8) : (bitsKeys &= ~MENU_KEY_8);
-        add(szMenu, charsmax(szMenu), fmt("%s Назад\n", page ? "\\y[\\r8\\y]\\w" : "\\d[8]"));
+        add(szMenu, charsmax(szMenu), fmt("%s %L\n", page ? "\\y[\\r8\\y]\\w" : "\\d[8]", player, "SHOP_BACK_MENU"));
         iEnd < iItems ? (bitsKeys |= MENU_KEY_9) : (bitsKeys &= ~MENU_KEY_9);
-        add(szMenu, charsmax(szMenu), fmt("%s Далее\n", iEnd < iItems ? "\\y[\\r9\\y]\\w" : "\\d[9]"));
+        add(szMenu, charsmax(szMenu), fmt("%s %L\n", iEnd < iItems ? "\\y[\\r9\\y]\\w" : "\\d[9]", player, "SHOP_NEXT_MENU"));
     }
 
-    add(szMenu, charsmax(szMenu), fmt("%s\\y[\\r0\\y]\\w Выход", iPages > 1 ? "" : "\n\n"));
+    add(szMenu, charsmax(szMenu), fmt("%s\\y[\\r0\\y]\\w %L", iPages > 1 ? "" : "\n\n", player, "SHOP_EXIT_MENU"));
 
     show_menu(player, bitsKeys, szMenu, -1, "SHOP_API_MENU");
+}
+
+stock GetLocalizeTitle(string[], const len, const player, const discount, const money)
+{
+    new szName[MAX_NAME_LENGTH];
+    get_user_name(player, szName, charsmax(szName));
+
+    copy(string, len, fmt("%L", player, "SHOP_MENU_TITLE"));
+    replace_stringex(string, len, ":name", fmt("%s", szName), .caseSensitive = false);
+    replace_stringex(string, len, ":money", fmt("%i", money), .caseSensitive = false);
+    replace_stringex(string, len, ":discount", fmt("%i", discount), .caseSensitive = false);
 }
 
 stock MenuDestroy(player)
