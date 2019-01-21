@@ -143,3 +143,21 @@ native bool: ShopHasUserItem(const player, const ShopItem: item);
  *                      the item doesn't exists in inventory
  */
 native bool: ShopRemoveUserItem(const player, const ShopItem: item);
+
+/**
+ * Sets a discount for a player.
+ *
+ * @param player        Player id
+ * @param discount      Discount amount
+ * 
+ * @return              true if the discount was setted or false
+ */
+native bool: ShopSetUserDiscount(const player, const discount);
+
+/**
+ * Returns the item cost with player discount.
+ *
+ * @param player        Player id
+ * @param item          Item id
+ */
+native ShopGetItemCostForUser(const player, const ShopItem: item);

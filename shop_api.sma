@@ -27,7 +27,8 @@ enum any: PlayerDataProperties
     PlayerCurrentPage,
     Array: PlayerCurrentMenu,
     PlayerSelectItem[ITEMS_ON_PAGE_WITHOUT_PAGINATOR + 1],
-    Array: PlayerInventory
+    Array: PlayerInventory,
+    PlayerDiscount
 };
 
 new Array: g_pItemsVec, Array: g_pForwardsVec;
@@ -47,6 +48,7 @@ public plugin_init()
 public client_disconnected(player)
 {
     g_sPlayerData[player][PlayerInventory] && ArrayDestroy(g_sPlayerData[player][PlayerInventory]);
+    arrayset(g_sPlayerData[player], 0, PlayerDataProperties);
 }
 
 public CmdHandle_ShopMenu(const player)
@@ -103,12 +105,17 @@ CreateMenu(const player, const page)
     MenuDisplay(player, page);
 }
 
+#define GET_COST_WITH_DISCOUNT(%0,%1) %0 - %0 * %1 / 100
 SelectShopItem(const player, const item)
 {
     new sItemData[ItemProperties];
     ArrayGetArray(g_pItemsVec, item, sItemData);
 
-    if (sItemData[ItemCost] > cs_get_user_money(player)) {
+    new const iDiscount = g_sPlayerData[player][PlayerDiscount];
+    new const iCost = iDiscount && sItemData[ItemDiscounts]
+    ? GET_COST_WITH_DISCOUNT(sItemData[ItemCost], iDiscount) : sItemData[ItemCost];
+
+    if (iCost > cs_get_user_money(player)) {
         ExecuteEventsHandle(Shop_ItemBuy, false, player, item, Buy_NotEnoughMoney);
         ExecuteEventsHandle(Shop_ItemBuy, true, player, item, Buy_NotEnoughMoney);
     }
@@ -125,7 +132,7 @@ SelectShopItem(const player, const item)
         bSuccess && (bSuccess = ExecuteEventsHandle(Shop_ItemBuy, true, player, item, Buy_OK));
 
         if (bSuccess) {
-            cs_set_user_money(player, cs_get_user_money(player) - sItemData[ItemCost]);
+            cs_set_user_money(player, cs_get_user_money(player) - iCost);
 
             if (sItemData[ItemInventory]) {
                 if (!g_sPlayerData[player][PlayerInventory]) {
@@ -178,6 +185,8 @@ public plugin_natives()
     {
         register_native("ShopHasUserItem",              "NativeHandle_HasUserItem");
         register_native("ShopRemoveUserItem",           "NativeHandle_RemoveUserItem");
+        register_native("ShopSetUserDiscount",          "NativeHandle_SetUserDiscount");
+        register_native("ShopGetItemCostForUser",       "NativeHandle_GetItemCostForUser");
     }
 }
 
@@ -350,6 +359,43 @@ public bool: NativeHandle_RemoveUserItem(amxx)
     return true;
 }
 
+public bool: NativeHandle_SetUserDiscount(amxx)
+{
+    enum { param_player = 1, param_discount };
+
+    new const iPlayer = get_param(param_player);
+    new const iDiscount = get_param(param_discount);
+
+    if (0 /* min percent */ > iDiscount > 100 /* max percent */) {
+        log_error(AMX_ERR_NATIVE, "%s Discount amount out of range (%i, min 0, max 100).", LOG_PREFIX, iDiscount);
+        return false;
+    }
+
+    g_sPlayerData[iPlayer][PlayerDiscount] = iDiscount;
+
+    return true;
+}
+
+public NativeHandle_GetItemCostForUser(amxx)
+{
+    enum { param_player = 1, param_item };
+
+    new const iPlayer = get_param(param_player);
+    new const iItem = get_param(param_item);
+
+    new sItemData[ItemProperties];
+    if (!ArrayGetArray(g_pItemsVec, iItem, sItemData)) {
+        log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, iItem);
+        return INVALID_HANDLE;
+    }
+
+    if (!sItemData[ItemDiscounts]) {
+        return sItemData[ItemCost];
+    }
+
+    return GET_COST_WITH_DISCOUNT(sItemData[ItemCost], g_sPlayerData[iPlayer][PlayerDiscount]);
+}
+
 /**************** END API ******************/
 
 /**************** UTILS ********************/
@@ -466,10 +512,12 @@ stock MenuDisplay(const player, page)
         return;
     }
 
-    new szMenu[512], bitsKeys = MENU_KEY_0, iStart, iEnd,
+    new szMenu[512], bitsKeys = MENU_KEY_0, iStart, iEnd, iCost,
     iIter, iPages, iItem, iItems = ArraySize(g_sPlayerData[player][PlayerCurrentMenu]), sItemData[ItemProperties],
     iItemsOnPage = iItems > ITEMS_ON_PAGE_WITHOUT_PAGINATOR ? ITEMS_ON_PAGE_WITH_PAGINATOR : ITEMS_ON_PAGE_WITHOUT_PAGINATOR;
 
+    new const iDiscount = g_sPlayerData[player][PlayerDiscount];
+    
     if ((iStart = page * iItemsOnPage) >= iItems) {
         iStart = page = g_sPlayerData[player][PlayerCurrentPage] = 0;
     }
@@ -478,7 +526,7 @@ stock MenuDisplay(const player, page)
         iEnd = iItems;
     }
 
-    formatex(szMenu, charsmax(szMenu), "AMXX Shop\nВаши деньги: \\r%i\\w$", cs_get_user_money(player));
+    formatex(szMenu, charsmax(szMenu), "AMXX Shop\nВаша скидка: \\r%i%\\w\nВаши деньги: \\r%i\\w$", iDiscount, cs_get_user_money(player));
 
     if ((iPages = iItems / iItemsOnPage + (iItems % iItemsOnPage ? 1 : 0)) > 1) {
         add(szMenu, charsmax(szMenu), fmt("\\R%i/%i", page + 1, iPages));
@@ -493,21 +541,24 @@ stock MenuDisplay(const player, page)
     while (iStart < iEnd) {
         ArrayGetArray(g_pItemsVec, iItem = ArrayGetCell(g_sPlayerData[player][PlayerCurrentMenu], iStart++), sItemData);
 
+        iCost = iDiscount && sItemData[ItemDiscounts]
+        ? GET_COST_WITH_DISCOUNT(sItemData[ItemCost], iDiscount) : sItemData[ItemCost];
+
         if (~get_user_flags(player) & sItemData[ItemAccess]) {
             DisableItem(bitsKeys, iIter, sItemData[ItemName]);
-            add(szMenu, charsmax(szMenu), fmt("\\d[%i] %s \\r *\\R$%i\n", iIter + 1, sItemData[ItemName], sItemData[ItemCost]));
+            add(szMenu, charsmax(szMenu), fmt("\\d[%i] %s \\r *\\R$%i\n", iIter + 1, sItemData[ItemName], iCost));
         }
         else if (sItemData[ItemInventory] && FindItemInInventory(player, iItem) > INVALID_HANDLE) {
             DisableItem(bitsKeys, iIter, sItemData[ItemName]);
-            add(szMenu, charsmax(szMenu), fmt("\\d[%i] %s \\r [+]\\d \\R$%i\n", iIter + 1, sItemData[ItemName], sItemData[ItemCost]));
+            add(szMenu, charsmax(szMenu), fmt("\\d[%i] %s \\r [+]\\d \\R$%i\n", iIter + 1, sItemData[ItemName], iCost));
         }
         else if (!ExecuteEventsHandle(Shop_ItemEnablePressing, false, player, iItem) || !ExecuteEventsHandle(Shop_ItemEnablePressing, true, player, iItem)) {
             DisableItem(bitsKeys, iIter, sItemData[ItemName]);
-            add(szMenu, charsmax(szMenu), fmt("\\d[%i] %s \\r \\R$%i\n", iIter + 1, sItemData[ItemName], sItemData[ItemCost]));
+            add(szMenu, charsmax(szMenu), fmt("\\d[%i] %s \\r \\R$%i\n", iIter + 1, sItemData[ItemName], iCost));
         }
         else {
             bitsKeys |= (1 << iIter); // EnableItem
-            add(szMenu, charsmax(szMenu), fmt("\\y[\\r%i\\y] \\w%s\\w \\R$%i\n", iIter + 1, sItemData[ItemName], sItemData[ItemCost]));
+            add(szMenu, charsmax(szMenu), fmt("\\y[\\r%i\\y] \\w%s\\w \\R$%i\n", iIter + 1, sItemData[ItemName], iCost));
         }
 
         if (iStart == iEnd) {

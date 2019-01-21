@@ -15,6 +15,9 @@ const Float: GRAVITY_AMOUNT = 0.4;
 const Float: HEALTH_AMOUNT  = 100.0;
 const Float: SPEED_AMOUNT   = 400.0;
 
+const ADMIN_FLAG            = ADMIN_LEVEL_H;
+const ADMIN_DISCOUNT        = 50;
+
 new const CHAT_PREFIX[]     = "\4[SHOP]\1";
 
 enum ShopItems
@@ -51,6 +54,13 @@ CreateCVars()
     bind_pcvar_num(create_cvar("shop_gravity_cost", "6000", FCVAR_NONE, "Cost of gravity", true, float(MIN_COST), true, float(iMaxCost)), g_iItems[SI_Gravity][ItemCost]);
     bind_pcvar_num(create_cvar("shop_speed_cost", "6000", FCVAR_NONE, "Cost of speed", true, float(MIN_COST), true, float(iMaxCost)), g_iItems[SI_Speed][ItemCost]);
     bind_pcvar_num(create_cvar("shop_hp_cost", "6000", FCVAR_NONE, "Cost of hp", true, float(MIN_COST), true, float(iMaxCost)), g_iItems[SI_HP][ItemCost]);
+}
+
+public client_putinserver(player)
+{
+    if (get_user_flags(player) & ADMIN_FLAG) {
+        ShopSetUserDiscount(player, ADMIN_DISCOUNT);
+    }
 }
 
 public Shop_ItemBuyHandle(const player, const ShopItem: item, const BuyState: buyState)
