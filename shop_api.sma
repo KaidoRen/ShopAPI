@@ -302,8 +302,10 @@ public bool: NativeHandle_GetItemInfo(amxx)
     enum { param_item = 1, param_namebuffer, param_namelen, param_cost, param_access, param_keybuffer, param_keylen };
 
     new sItemData[ItemProperties];
-    if (!ArrayGetArray(g_pItemsVec, get_param(param_item), sItemData)) {
-        log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, get_param(param_item));
+    new const iItem = get_param(param_item);
+
+    if (!ArrayGetArray(g_pItemsVec, iItem, sItemData)) {
+        log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, iItem);
         return false;
     }
 
@@ -320,8 +322,10 @@ public ItemFlag: NativeHandle_GetItemFlags(amxx)
     enum { param_item = 1, param_buffer };
 
     new sItemData[ItemProperties];
-    if (!ArrayGetArray(g_pItemsVec, get_param(param_item), sItemData)) {
-        log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, get_param(param_item));
+    new const iItem = get_param(param_item);
+    
+    if (!ArrayGetArray(g_pItemsVec, iItem, sItemData)) {
+        log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, iItem);
         return IF_None;
     }
 
