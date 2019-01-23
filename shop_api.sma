@@ -18,7 +18,7 @@ enum any: ItemProperties
     ItemPlugin,
     ItemAccess,
     ItemFlag: ItemFlags,
-    bool: ItemDiscounts,
+    bool: ItemDiscount,
     bool: ItemInventory
 };
 
@@ -114,7 +114,7 @@ SelectShopItem(const player, const item)
     ArrayGetArray(g_pItemsVec, item, sItemData);
 
     new const iDiscount = g_sPlayerData[player][PlayerDiscount];
-    new const iCost = iDiscount && sItemData[ItemDiscounts]
+    new const iCost = iDiscount && sItemData[ItemDiscount]
     ? GET_COST_WITH_DISCOUNT(sItemData[ItemCost], iDiscount) : sItemData[ItemCost];
 
     if (iCost > cs_get_user_money(player)) {
@@ -273,7 +273,7 @@ public bool: NativeHandle_EnableEvent(amxx)
 
 public NativeHandle_PushItem(amxx)
 {
-    enum { param_name = 1, param_cost, param_access, param_flags, param_discounts, param_inventory, param_key };
+    enum { param_name = 1, param_cost, param_access, param_flags, param_discount, param_inventory, param_key };
 
     new sItemData[ItemProperties];
 
@@ -287,7 +287,7 @@ public NativeHandle_PushItem(amxx)
     sItemData[ItemAccess]       = get_param(param_access);
     sItemData[ItemFlags]        = ItemFlag: get_param(param_flags);
     sItemData[ItemInventory]    = bool: get_param(param_inventory);
-    sItemData[ItemDiscounts]    = bool: get_param(param_discounts);
+    sItemData[ItemDiscount]    = bool: get_param(param_discount);
 
     if (get_string(param_key, sItemData[ItemStrKey], charsmax(sItemData[ItemStrKey])) 
         && ArrayFindString(g_pItemsVec, sItemData[ItemStrKey]) != INVALID_HANDLE) {
@@ -459,7 +459,7 @@ public NativeHandle_GetItemCostForUser(amxx)
         return INVALID_HANDLE;
     }
 
-    if (!sItemData[ItemDiscounts]) {
+    if (!sItemData[ItemDiscount]) {
         return sItemData[ItemCost];
     }
 
@@ -611,7 +611,7 @@ stock MenuDisplay(const player, page)
     while (iStart < iEnd) {
         ArrayGetArray(g_pItemsVec, iItem = ArrayGetCell(g_sPlayerData[player][PlayerCurrentMenu], iStart++), sItemData);
 
-        iCost = iDiscount && sItemData[ItemDiscounts]
+        iCost = iDiscount && sItemData[ItemDiscount]
         ? GET_COST_WITH_DISCOUNT(sItemData[ItemCost], iDiscount) : sItemData[ItemCost];
 
         if (~get_user_flags(player) & sItemData[ItemAccess]) {
