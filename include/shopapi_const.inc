@@ -16,6 +16,17 @@ enum ItemFlag (<<=1)
     IF_OnlySpectator
 };
 
+enum ItemProp
+{
+    Item_Strkey,
+    Item_Name,
+    Item_Cost,
+    Item_Access = 4,
+    Item_Flags,
+    Item_Discount,
+    Item_Inventory
+};
+
 enum BuyState
 {
     Buy_NotEnoughMoney,

@@ -103,6 +103,17 @@ native ShopDestroyItem(const ShopItem: item);
 native bool: ShopGetItemInfo(const ShopItem: item, const name[] = "", const namelen = 0, const &cost = 0, const &access = 0, const strkey[] = "", const keylen = 0);
 
 /**
+* Sets info about a item.
+*
+* @param item           Item id
+* @param prop           Property id (enum ItemProp)
+* @param ...            New value
+*
+* @return               true if the info was changed or false
+*/
+native bool: ShopSetItemInfo(ShopItem: item, ItemProp: prop, any:...);
+
+/**
  * Get item flags.
  *
  * @param item          Item id

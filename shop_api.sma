@@ -17,9 +17,9 @@ enum any: ItemProperties
     ItemCost,
     ItemPlugin,
     ItemAccess,
-    bool: ItemInventory,
+    ItemFlag: ItemFlags,
     bool: ItemDiscounts,
-    ItemFlag: ItemFlags
+    bool: ItemInventory
 };
 
 enum any: PlayerDataProperties
@@ -185,6 +185,7 @@ public plugin_natives()
         register_native("ShopPushItem",                 "NativeHandle_PushItem");
         register_native("ShopDestroyItem",              "NativeHandle_DestroyItem");
         register_native("ShopGetItemInfo",              "NativeHandle_GetItemInfo");
+        register_native("ShopSetItemInfo",              "NativeHandle_SetItemInfo");
         register_native("ShopGetItemFlags",             "NativeHandle_GetItemFlags");
         register_native("ShopFindItemByKey",            "NativeHandle_FindItemByKey");
     }
@@ -321,6 +322,50 @@ public bool: NativeHandle_GetItemInfo(amxx)
     set_string(param_keybuffer,     sItemData[ItemStrKey],  get_param(param_keylen));
 
     return true;
+}
+
+public bool: NativeHandle_SetItemInfo(amxx, params)
+{
+    enum { param_item = 1, param_prop, param_value };
+
+    new sItemData[ItemProperties];
+    new const iItem = get_param(param_item);
+
+    if (!ArrayGetArray(g_pItemsVec, iItem, sItemData)) {
+        log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, iItem);
+        return false;
+    }
+
+    if (params < param_value) {
+        log_error(AMX_ERR_NATIVE, "%s Missing new value", LOG_PREFIX);
+        return false;
+    }
+
+    new iProp = get_param(param_prop);
+
+    switch (iProp) {
+        case Item_Name, Item_Strkey: {
+            /* Enumerations ItemProperties and ItemProp differ in numbering. This line calculates the difference to get the desired result. */
+            iProp = (iProp == any: Item_Name ? SHOP_MAX_KEY_LENGTH : 0);
+            if (!get_string(param_value, sItemData[iProp], (iProp == any: Item_Name ? SHOP_MAX_ITEM_NAME_LENGTH : SHOP_MAX_KEY_LENGTH) - 1)) {
+                log_error(AMX_ERR_NATIVE, "%s New value cannot be empty", LOG_PREFIX);
+                return false;
+            }
+        }
+
+        case Item_Cost..Item_Inventory: {
+            /* Enumerations ItemProperties and ItemProp differ in numbering. This line calculates the difference to get the desired result. */
+            iProp += any: ItemCost - iProp;
+            sItemData[iProp] = get_param_byref(param_value);
+        }
+
+        default: {
+            log_error(AMX_ERR_NATIVE, "%s This property does not exist", LOG_PREFIX);
+            return false;
+        }
+    }
+
+    return bool: ArraySetArray(g_pItemsVec, iItem, sItemData);
 }
 
 public ItemFlag: NativeHandle_GetItemFlags(amxx)
