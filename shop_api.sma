@@ -31,7 +31,7 @@ enum any: PlayerDataProperties
     PlayerDiscount
 };
 
-new Array: g_pItemsVec, Array: g_pForwardsVec;
+new Array: g_pItemsVec, Array: g_pForwardsVec, Trie: g_pPlaceholdersAssoc;
 new g_sPlayerData[MAX_PLAYERS + 1][PlayerDataProperties];
 
 public plugin_init()
@@ -169,8 +169,9 @@ new const LOG_PREFIX[] = "[ShopAPI]";
 
 public plugin_natives()
 {
-    g_pItemsVec     = ArrayCreate(ItemProperties);
-    g_pForwardsVec  = ArrayCreate(ForwardProperties);
+    g_pPlaceholdersAssoc    = TrieCreate();
+    g_pItemsVec             = ArrayCreate(ItemProperties);
+    g_pForwardsVec          = ArrayCreate(ForwardProperties);
 
     // (ForwardNatives)
     {
@@ -196,6 +197,13 @@ public plugin_natives()
         register_native("ShopRemoveUserItem",           "NativeHandle_RemoveUserItem");
         register_native("ShopSetUserDiscount",          "NativeHandle_SetUserDiscount");
         register_native("ShopGetItemCostForUser",       "NativeHandle_GetItemCostForUser");
+    }
+
+    // (Placeholders)
+    {
+        register_native("ShopSetPlaceholderInt",        "NativeHandle_SetPlaceholderInt");
+        register_native("ShopSetPlaceholderFloat",      "NativeHandle_SetPlaceholderFloat");
+        register_native("ShopSetPlaceholderString",     "NativeHandle_SetPlaceholderString");
     }
 }
 
@@ -466,6 +474,42 @@ public NativeHandle_GetItemCostForUser(amxx)
     return GET_COST_WITH_DISCOUNT(sItemData[ItemCost], g_sPlayerData[iPlayer][PlayerDiscount]);
 }
 
+public NativeHandle_SetPlaceholderInt(amxx)
+{
+    enum { param_placeholder = 1, param_value }
+
+    new szPlaceholder[SHOP_MAX_PLACEHOLDER_LENGTH];
+    if (!get_string(param_placeholder, szPlaceholder, charsmax(szPlaceholder))) {
+        return PLUGIN_CONTINUE;
+    }
+
+    return TrieSetString(g_pPlaceholdersAssoc, fmt(":%s", szPlaceholder), fmt("%s", get_param(param_value)));
+}
+
+public NativeHandle_SetPlaceholderFloat(amxx)
+{
+    enum { param_placeholder = 1, param_value }
+
+    new szPlaceholder[SHOP_MAX_PLACEHOLDER_LENGTH];
+    if (!get_string(param_placeholder, szPlaceholder, charsmax(szPlaceholder))) {
+        return PLUGIN_CONTINUE;
+    }
+
+    return TrieSetString(g_pPlaceholdersAssoc, fmt(":%s", szPlaceholder), fmt("%d", get_param_f(param_value)));
+}
+
+public NativeHandle_SetPlaceholderString(amxx)
+{
+    enum { param_placeholder = 1, param_value, param_vargs }
+
+    new szPlaceholder[SHOP_MAX_PLACEHOLDER_LENGTH], szValue[SHOP_MAX_PLACEHOLDER_VAL_LENGTH];
+    if (!get_string(param_placeholder, szPlaceholder, charsmax(szPlaceholder)) || !vdformat(szValue, charsmax(szValue), param_value, param_vargs)) {
+        return PLUGIN_CONTINUE;
+    }
+
+    return TrieSetString(g_pPlaceholdersAssoc, fmt(":%s", szPlaceholder), fmt("%s", szValue));
+}
+
 /**************** END API ******************/
 
 /**************** UTILS ********************/
@@ -659,6 +703,18 @@ stock GetLocalizeTitle(string[], const len, const player, const discount, const 
     replace_stringex(string, len, ":name", fmt("%s", szName), .caseSensitive = false);
     replace_stringex(string, len, ":money", fmt("%i", money), .caseSensitive = false);
     replace_stringex(string, len, ":discount", fmt("%i", discount), .caseSensitive = false);
+
+    new szPlaceholder[SHOP_MAX_PLACEHOLDER_LENGTH], szValue[SHOP_MAX_PLACEHOLDER_VAL_LENGTH],
+    TrieIter: pPlaceholder = TrieIterCreate(g_pPlaceholdersAssoc);
+    while (!TrieIterEnded(pPlaceholder)) {
+        if (TrieIterGetKey(pPlaceholder, szPlaceholder, charsmax(szPlaceholder)) && TrieIterGetString(pPlaceholder, szValue, charsmax(szValue))) {
+            replace_stringex(string, len, szPlaceholder, szValue, .caseSensitive = false);
+        }
+
+        TrieIterNext(pPlaceholder);
+    }
+
+    TrieIterDestroy(pPlaceholder);
 }
 
 stock MenuDestroy(player)

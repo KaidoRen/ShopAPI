@@ -172,3 +172,30 @@ native bool: ShopSetUserDiscount(const player, const discount);
  * @param item          Item id
  */
 native ShopGetItemCostForUser(const player, const ShopItem: item);
+
+/**
+ * Creates a variable to localize the title in the store.
+ * It takes an integer as its value.
+ *
+ * @param placeholder   Placeholder key
+ * @param value         Placeholder value
+ */
+native bool: ShopSetPlaceholderInt(const placeholder[SHOP_MAX_PLACEHOLDER_LENGTH], const any: value);
+
+/**
+ * Creates a variable to localize the title in the store.
+ * It takes an float as its value.
+ *
+ * @param placeholder   Placeholder key
+ * @param value         Placeholder value
+ */
+native bool: ShopSetPlaceholderFloat(const placeholder[SHOP_MAX_PLACEHOLDER_LENGTH], const Float: value);
+
+/**
+ * Creates a variable to localize the title in the store.
+ * It takes an string as its value.
+ *
+ * @param placeholder   Placeholder key
+ * @param value         Placeholder value
+ */
+native bool: ShopSetPlaceholderString(const placeholder[SHOP_MAX_PLACEHOLDER_LENGTH], const value[SHOP_MAX_PLACEHOLDER_VAL_LENGTH], any: ...);
