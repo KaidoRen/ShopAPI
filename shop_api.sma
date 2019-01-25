@@ -334,7 +334,7 @@ public bool: NativeHandle_GetItemInfo(amxx)
 
 public bool: NativeHandle_SetItemInfo(amxx, params)
 {
-    enum { param_item = 1, param_prop, param_value };
+    enum { param_item = 1, param_prop, param_value, param_vargs };
 
     new sItemData[ItemProperties];
     new const iItem = get_param(param_item);
@@ -355,7 +355,7 @@ public bool: NativeHandle_SetItemInfo(amxx, params)
         case Item_Name, Item_Strkey: {
             /* Enumerations ItemProperties and ItemProp differ in numbering. This line calculates the difference to get the desired result. */
             iProp = (iProp == any: Item_Name ? SHOP_MAX_KEY_LENGTH : 0);
-            if (!get_string(param_value, sItemData[iProp], (iProp == any: Item_Name ? SHOP_MAX_ITEM_NAME_LENGTH : SHOP_MAX_KEY_LENGTH) - 1)) {
+            if (!vdformat(sItemData[iProp], (iProp == any: Item_Name ? SHOP_MAX_ITEM_NAME_LENGTH : SHOP_MAX_KEY_LENGTH) - 1, param_value, param_vargs)) {
                 log_error(AMX_ERR_NATIVE, "%s New value cannot be empty", LOG_PREFIX);
                 return false;
             }
