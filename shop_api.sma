@@ -6,6 +6,7 @@
 #pragma ctrlchar            '\'
 
 new const PLUGIN[] =        "Shop API";
+new const LOG_PREFIX[] = "[ShopAPI]";
 
 const ITEMS_ON_PAGE_WITH_PAGINATOR = 7;
 const ITEMS_ON_PAGE_WITHOUT_PAGINATOR = 9;
@@ -28,6 +29,7 @@ enum any: PlayerDataProperties
     Array: PlayerCurrentMenu,
     PlayerSelectItem[ITEMS_ON_PAGE_WITHOUT_PAGINATOR + 1],
     Array: PlayerInventory,
+    Trie: PlayerItemData,
     PlayerDiscount
 };
 
@@ -87,7 +89,7 @@ CreateMenu(const player, const page)
     g_sPlayerData[player][PlayerCurrentMenu] = CreateMenuItemsStorage();
     
     for (new i; i < ArraySize(g_pItemsVec); i++) {
-        if (!ArrayGetArray(g_pItemsVec, i, sItemData)) {
+        if (!GetItemData(player, i, sItemData)) {
             continue;
         }
 
@@ -111,7 +113,10 @@ CreateMenu(const player, const page)
 SelectShopItem(const player, const item)
 {
     new sItemData[ItemProperties];
-    ArrayGetArray(g_pItemsVec, item, sItemData);
+    if (!GetItemData(player, item, sItemData)) {
+        log_error(AMX_ERR_NOTFOUND, "%s Invalid item id (%i)", LOG_PREFIX, item);
+        return;
+    }
 
     new const iDiscount = g_sPlayerData[player][PlayerDiscount];
     new const iCost = iDiscount && sItemData[ItemDiscount]
@@ -159,8 +164,6 @@ enum any: ForwardProperties
     ForwardPlugin
 };
 
-new const LOG_PREFIX[] = "[ShopAPI]";
-
 #define CHECK_PLAYER(%0) \
     if (!(0 < %0 <= MaxClients)) { \
         log_error(AMX_ERR_NATIVE, "%s Player out of range (%i)", LOG_PREFIX, %0); \
@@ -196,7 +199,6 @@ public plugin_natives()
         register_native("ShopHasUserItem",              "NativeHandle_HasUserItem");
         register_native("ShopRemoveUserItem",           "NativeHandle_RemoveUserItem");
         register_native("ShopSetUserDiscount",          "NativeHandle_SetUserDiscount");
-        register_native("ShopGetItemCostForUser",       "NativeHandle_GetItemCostForUser");
     }
 
     // (Placeholders)
@@ -309,17 +311,30 @@ public NativeHandle_PushItem(amxx)
 public NativeHandle_DestroyItem(amxx)
 {
     enum { param_item = 1 };
-    ArrayDeleteItem(g_pItemsVec, get_param(param_item));
+
+    new const iItem = get_param(param_item);
+    ArrayDeleteItem(g_pItemsVec, iItem);
+
+    new sPlayers[MAX_PLAYERS], iPlayers;
+    get_players(sPlayers, iPlayers, "dh");
+
+    for (new i; i < iPlayers; i++) {
+        TrieDeleteKey(g_sPlayerData[sPlayers[i]][PlayerItemData], fmt("%i", iItem));
+    }
 }
 
 public bool: NativeHandle_GetItemInfo(amxx)
 {
-    enum { param_item = 1, param_namebuffer, param_namelen, param_cost, param_access, param_keybuffer, param_keylen };
+    enum { param_player = 1, param_item, param_namebuffer, param_namelen, param_cost, param_access, param_keybuffer, param_keylen };
 
+    new const iPlayer = get_param(param_player), iItem = get_param(param_item);
+
+    if (iPlayer) {
+        CHECK_PLAYER(iPlayer)
+    }
+    
     new sItemData[ItemProperties];
-    new const iItem = get_param(param_item);
-
-    if (!ArrayGetArray(g_pItemsVec, iItem, sItemData)) {
+    if (!GetItemData(iPlayer, iItem, sItemData)) {
         log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, iItem);
         return false;
     }
@@ -334,12 +349,18 @@ public bool: NativeHandle_GetItemInfo(amxx)
 
 public bool: NativeHandle_SetItemInfo(amxx, params)
 {
-    enum { param_item = 1, param_prop, param_value, param_vargs };
+    enum { param_player = 1, param_item, param_prop, param_value, param_vargs };
+
+    new const iPlayer = get_param(param_player), iItem = get_param(param_item);
+
+    if (iPlayer) {
+        CHECK_PLAYER(iPlayer)
+
+        !g_sPlayerData[iPlayer][PlayerItemData] && (g_sPlayerData[iPlayer][PlayerItemData] = TrieCreate());
+    }
 
     new sItemData[ItemProperties];
-    new const iItem = get_param(param_item);
-
-    if (!ArrayGetArray(g_pItemsVec, iItem, sItemData)) {
+    if (!GetItemData(iPlayer, iItem, sItemData)) {
         log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, iItem);
         return false;
     }
@@ -349,41 +370,29 @@ public bool: NativeHandle_SetItemInfo(amxx, params)
         return false;
     }
 
-    new iProp = get_param(param_prop);
-
-    switch (iProp) {
-        case Item_Name, Item_Strkey: {
-            /* Enumerations ItemProperties and ItemProp differ in numbering. This line calculates the difference to get the desired result. */
-            iProp = (iProp == any: Item_Name ? SHOP_MAX_KEY_LENGTH : 0);
-            if (!vdformat(sItemData[iProp], (iProp == any: Item_Name ? SHOP_MAX_ITEM_NAME_LENGTH : SHOP_MAX_KEY_LENGTH) - 1, param_value, param_vargs)) {
-                log_error(AMX_ERR_NATIVE, "%s New value cannot be empty", LOG_PREFIX);
-                return false;
-            }
-        }
-
-        case Item_Cost..Item_Inventory: {
-            /* Enumerations ItemProperties and ItemProp differ in numbering. This line calculates the difference to get the desired result. */
-            iProp += any: ItemCost - iProp;
-            sItemData[iProp] = get_param_byref(param_value);
-        }
-
-        default: {
-            log_error(AMX_ERR_NATIVE, "%s This property does not exist", LOG_PREFIX);
-            return false;
-        }
+    if (!GetModifiedItemData(param_prop, param_value, param_vargs, sItemData)) {
+        return false;
     }
 
-    return bool: ArraySetArray(g_pItemsVec, iItem, sItemData);
+    new bool: bSuccess;
+    !iPlayer && (bSuccess = bool: ArraySetArray(g_pItemsVec, iItem, sItemData));
+    iPlayer && (bSuccess = bool: TrieSetArray(g_sPlayerData[iPlayer][PlayerItemData], fmt("%i", iItem), sItemData, ItemProperties));
+
+    return bSuccess;
 }
 
 public ItemFlag: NativeHandle_GetItemFlags(amxx)
 {
-    enum { param_item = 1, param_buffer };
+    enum { param_player = 1, param_item, param_buffer };
+
+    new const iPlayer = get_param(param_player), iItem = get_param(param_item);
+
+    if (iPlayer) {
+        CHECK_PLAYER(iPlayer)
+    }
 
     new sItemData[ItemProperties];
-    new const iItem = get_param(param_item);
-    
-    if (!ArrayGetArray(g_pItemsVec, iItem, sItemData)) {
+    if (!GetItemData(iPlayer, iItem, sItemData)) {
         log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, iItem);
         return IF_None;
     }
@@ -597,12 +606,50 @@ stock bool: ExecuteEventsHandle(ShopFunc: func, bool: single, any: ...)
     return bState;
 }
 
-stock RemoveColorSymbols(buffer[], const len)
+stock RemoveColorSymbols(buffer[])
 {
-    replace_all(buffer, len, "\\w", "");
-    replace_all(buffer, len, "\\y", "");
-    replace_all(buffer, len, "\\r", "");
-    replace_all(buffer, len, "\\d", "");
+    replace_all(buffer, SHOP_MAX_ITEM_NAME_LENGTH - 1, "\\w", "");
+    replace_all(buffer, SHOP_MAX_ITEM_NAME_LENGTH - 1, "\\y", "");
+    replace_all(buffer, SHOP_MAX_ITEM_NAME_LENGTH - 1, "\\r", "");
+    replace_all(buffer, SHOP_MAX_ITEM_NAME_LENGTH - 1, "\\d", "");
+}
+
+stock GetItemData(player, item, buffer[ItemProperties])
+{
+    new bool: bSuccess;
+    player && g_sPlayerData[player][PlayerItemData] && (bSuccess = TrieGetArray(g_sPlayerData[player][PlayerItemData], fmt("%i", item), buffer, ItemProperties));
+    !bSuccess && (bSuccess = bool: ArrayGetArray(g_pItemsVec, item, buffer, ItemProperties));
+
+    return bSuccess;
+}
+
+stock GetModifiedItemData(param_prop, param_value, param_vargs, buffer[])
+{
+    new iProp = get_param(param_prop);
+
+    switch (iProp) {
+        case Item_Name, Item_Strkey: {
+            /* Enumerations ItemProperties and ItemProp differ in numbering. This line calculates the difference to get the desired result. */
+            iProp = (iProp == any: Item_Name ? SHOP_MAX_KEY_LENGTH : 0);
+            if (!vdformat(buffer[iProp], (iProp == any: ItemName ? SHOP_MAX_ITEM_NAME_LENGTH : SHOP_MAX_KEY_LENGTH) - 1, param_value, param_vargs)) {
+                log_error(AMX_ERR_NATIVE, "%s New value cannot be empty", LOG_PREFIX);
+                return false;
+            }
+        }
+
+        case Item_Cost..Item_Inventory: {
+            /* Enumerations ItemProperties and ItemProp differ in numbering. This line calculates the difference to get the desired result. */
+            iProp += any: ItemCost - iProp;
+            buffer[iProp] = get_param_byref(param_value);
+        }
+
+        default: {
+            log_error(AMX_ERR_NATIVE, "%s This property does not exist", LOG_PREFIX);
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**************** END UTILS ****************/
@@ -619,7 +666,7 @@ stock MenuPushItem(player, item)
     ArrayPushCell(g_sPlayerData[player][PlayerCurrentMenu], item);
 }
 
-#define DisableItem(%0,%1,%2) %0    &= ~(1 << %1); RemoveColorSymbols(%2, charsmax(%2))
+#define DisableItem(%0,%1,%2) %0    &= ~(1 << %1); RemoveColorSymbols(%2)
 stock MenuDisplay(const player, page)
 {
     if (page < 0) {
@@ -653,7 +700,7 @@ stock MenuDisplay(const player, page)
     }
 
     while (iStart < iEnd) {
-        ArrayGetArray(g_pItemsVec, iItem = ArrayGetCell(g_sPlayerData[player][PlayerCurrentMenu], iStart++), sItemData);
+        GetItemData(player, iItem = ArrayGetCell(g_sPlayerData[player][PlayerCurrentMenu], iStart++), sItemData);
 
         iCost = iDiscount && sItemData[ItemDiscount]
         ? GET_COST_WITH_DISCOUNT(sItemData[ItemCost], iDiscount) : sItemData[ItemCost];

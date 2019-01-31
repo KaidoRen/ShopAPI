@@ -23,6 +23,11 @@ enum ShopItem
     INVALID_SHOPITEM = -1
 };
 
+enum
+{
+    SHOP_GLOBAL_INFO,
+};
+
 /**
 * Registers an event
 *
@@ -90,6 +95,7 @@ native ShopDestroyItem(const ShopItem: item);
 /**
 * Retrieves info about a item.
 *
+* @param player         Player id or SHOP_GLOBAL_INFO constant (0)
 * @param item           Item id
 * @param name           Item name buffer
 * @param namelen        Item name buffer len
@@ -100,28 +106,30 @@ native ShopDestroyItem(const ShopItem: item);
 *
 * @return               Item exists (true/false)
 */
-native bool: ShopGetItemInfo(const ShopItem: item, const name[] = "", const namelen = 0, const &cost = 0, const &access = 0, const strkey[] = "", const keylen = 0);
+native bool: ShopGetItemInfo(const player, const ShopItem: item, const name[] = "", const namelen = 0, const &cost = 0, const &access = 0, const strkey[] = "", const keylen = 0);
 
 /**
 * Sets info about a item.
 *
+* @param player         Player id or SHOP_GLOBAL_INFO constant (0)
 * @param item           Item id
 * @param prop           Property id (enum ItemProp)
 * @param ...            New value
 *
 * @return               true if the info was changed or false
 */
-native bool: ShopSetItemInfo(ShopItem: item, ItemProp: prop, any:...);
+native bool: ShopSetItemInfo(const player, ShopItem: item, ItemProp: prop, any:...);
 
 /**
  * Get item flags.
  *
+ * @param player        Player id or SHOP_GLOBAL_INFO constant (0)
  * @param item          Item id
  * @param flags         Variable to store flags to
  *
  * @return              Item flags or always IF_None flag
  */
- native ItemFlag: ShopGetItemFlags(const ShopItem: item, &flags = 0);
+ native ItemFlag: ShopGetItemFlags(const player, const ShopItem: item, &flags = 0);
 
 /**
  * Find item by string key.
@@ -164,14 +172,6 @@ native bool: ShopRemoveUserItem(const player, const ShopItem: item);
  * @return              true if the discount was setted or false
  */
 native bool: ShopSetUserDiscount(const player, const discount);
-
-/**
- * Returns the item cost with player discount.
- *
- * @param player        Player id
- * @param item          Item id
- */
-native ShopGetItemCostForUser(const player, const ShopItem: item);
 
 /**
  * Creates a variable to localize the title in the store.
