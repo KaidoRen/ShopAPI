@@ -74,7 +74,7 @@ native bool: ShopDisableEvent(ShopEvent: event);
 * @param cost           Item cost
 * @param access         Item access
 * @param flags          Item flags
-* @param discounts      Enable discounts for this item
+* @param discount       Default discount
 * @param inventory      Save item in inventory
 * @param strkey         Unique key to search for the item
 *
@@ -100,6 +100,8 @@ native ShopDestroyItem(const ShopItem: item);
 * @param name           Item name buffer
 * @param namelen        Item name buffer len
 * @param cost           Variable to store cost to
+* @param costWithDiscount Get price with discount
+* @param discount       Variable to store discount to
 * @param access         Variable to store access flags to
 * @param strkey         Item string key buffer
 * @param keylen         Item string key buffer len
@@ -118,7 +120,7 @@ native bool: ShopGetItemInfo(const player, const ShopItem: item, const name[] = 
 *
 * @return               true if the info was changed or false
 */
-native bool: ShopSetItemInfo(const player, ShopItem: item, ItemProp: prop, any:...);
+native bool: ShopSetItemInfo(const player, const ShopItem: item, ItemProp: prop, any:...);
 
 /**
  * Get item flags.
@@ -129,7 +131,7 @@ native bool: ShopSetItemInfo(const player, ShopItem: item, ItemProp: prop, any:.
  *
  * @return              Item flags or always IF_None flag
  */
- native ItemFlag: ShopGetItemFlags(const player, const ShopItem: item, &flags = 0);
+ native ItemFlag: ShopGetItemFlags(const player, const ShopItem: item, const &flags = 0);
 
 /**
  * Find item by string key.
@@ -139,7 +141,7 @@ native bool: ShopSetItemInfo(const player, ShopItem: item, ItemProp: prop, any:.
  * @return              Item id
  * @error               -1 if can't find
  */
-native ShopItem: ShopFindItemByKey(strkey[SHOP_MAX_KEY_LENGTH]);
+native ShopItem: ShopFindItemByKey(const strkey[SHOP_MAX_KEY_LENGTH]);
 
 /**
  * Checks existence a item in inventory of player.
