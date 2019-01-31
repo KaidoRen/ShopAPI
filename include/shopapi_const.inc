@@ -24,8 +24,8 @@ enum ItemProp
     Item_Name,
     Item_Cost,
     Item_Access = 4,
-    Item_Flags,
     Item_Discount,
+    Item_Flags,
     Item_Inventory
 };
 

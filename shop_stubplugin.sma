@@ -50,7 +50,9 @@ public plugin_init()
 
 CreateCVars()
 {
+    // For ReGameDLL
     new const iMaxCost = cvar_exists("mp_maxmoney") ? get_cvar_num("mp_maxmoney") : GAMEDLL_MAXMONEY;
+    
     bind_pcvar_num(create_cvar("shop_gravity_cost", "6000", FCVAR_NONE, "Cost of gravity", true, float(MIN_COST), true, float(iMaxCost)), g_iItems[SI_Gravity][ItemCost]);
     bind_pcvar_num(create_cvar("shop_speed_cost", "6000", FCVAR_NONE, "Cost of speed", true, float(MIN_COST), true, float(iMaxCost)), g_iItems[SI_Speed][ItemCost]);
     bind_pcvar_num(create_cvar("shop_hp_cost", "6000", FCVAR_NONE, "Cost of hp", true, float(MIN_COST), true, float(iMaxCost)), g_iItems[SI_HP][ItemCost]);
@@ -59,7 +61,7 @@ CreateCVars()
 public client_putinserver(player)
 {
     if (get_user_flags(player) & ADMIN_FLAG) {
-        ShopSetUserDiscount(player, ADMIN_DISCOUNT);
+        ShopSetItemInfo(player, g_iItems[SI_Gravity][ItemID], Item_Discount, ADMIN_DISCOUNT);
     }
 }
 

@@ -81,7 +81,7 @@ native bool: ShopDisableEvent(ShopEvent: event);
 * @return               Index of the new item
 * @error                -1 if creation failed
 */
-native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_ALL, const ItemFlag: flags = IF_None, const bool: discounts = true, const bool: inventory = false, const strkey[SHOP_MAX_KEY_LENGTH] = "");
+native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_ALL, const ItemFlag: flags = IF_None, const discount = 0, const bool: inventory = false, const strkey[SHOP_MAX_KEY_LENGTH] = "");
 
 /**
 * Delete item.
@@ -106,7 +106,7 @@ native ShopDestroyItem(const ShopItem: item);
 *
 * @return               Item exists (true/false)
 */
-native bool: ShopGetItemInfo(const player, const ShopItem: item, const name[] = "", const namelen = 0, const &cost = 0, const &access = 0, const strkey[] = "", const keylen = 0);
+native bool: ShopGetItemInfo(const player, const ShopItem: item, const name[] = "", const namelen = 0, const &cost = 0, bool: costWithDiscount = true, const &discount = 0, const &access = 0, const strkey[] = "", const keylen = 0);
 
 /**
 * Sets info about a item.
@@ -151,7 +151,6 @@ native ShopItem: ShopFindItemByKey(strkey[SHOP_MAX_KEY_LENGTH]);
  */
 native bool: ShopHasUserItem(const player, const ShopItem: item);
 
-
 /**
  * Removes item in inventory of player.
  *
@@ -162,16 +161,6 @@ native bool: ShopHasUserItem(const player, const ShopItem: item);
  *                      the item doesn't exists in inventory
  */
 native bool: ShopRemoveUserItem(const player, const ShopItem: item);
-
-/**
- * Sets a discount for a player.
- *
- * @param player        Player id
- * @param discount      Discount amount
- * 
- * @return              true if the discount was setted or false
- */
-native bool: ShopSetUserDiscount(const player, const discount);
 
 /**
  * Creates a variable to localize the title in the store.
