@@ -195,6 +195,7 @@ public plugin_natives()
     {
         register_native("ShopHasUserItem",              "NativeHandle_HasUserItem");
         register_native("ShopRemoveUserItem",           "NativeHandle_RemoveUserItem");
+        register_native("ShopClearUserInventory",       "NativeHandle_ClearUserInventory");
     }
 
     // (Placeholders)
@@ -435,6 +436,41 @@ public bool: NativeHandle_RemoveUserItem(amxx)
     }
 
     ArrayDeleteItem(g_sPlayerData[iPlayer][PlayerInventory], iFindItem);
+    return true;
+}
+
+public NativeHandle_ClearUserInventory(amxx, params)
+{
+    enum { param_player = 1, param_except };
+
+    new const iPlayer = get_param(param_player);
+
+    CHECK_PLAYER(iPlayer)
+
+    if (params < param_except) {
+        ArrayClear(g_sPlayerData[iPlayer][PlayerInventory]);
+    }
+    else {
+        new Array: iArrayCopy = ArrayCreate(), bool: bFind, iItem;
+        for (new i = param_except; i <= params; i++) {
+            iItem = get_param(i);
+
+            if (FindItemInInventory(iPlayer, iItem) != INVALID_HANDLE) {
+                bFind = true;
+                ArrayPushCell(iArrayCopy, iItem);
+            }
+        }
+
+        ArrayDestroy(g_sPlayerData[iPlayer][PlayerInventory]);
+
+        if (bFind) {
+            g_sPlayerData[iPlayer][PlayerInventory] = iArrayCopy;
+            return true;
+        }
+
+        ArrayDestroy(iArrayCopy);
+    }
+
     return true;
 }
 

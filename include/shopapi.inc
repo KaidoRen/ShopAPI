@@ -165,6 +165,15 @@ native bool: ShopHasUserItem(const player, const ShopItem: item);
 native bool: ShopRemoveUserItem(const player, const ShopItem: item);
 
 /**
+ * Removes the all items in inventory of player.
+ * @param player        Player id
+ * @param ...           Except items
+ *
+ * @return              true if the player index is valid or false otherwise
+ */
+native bool: ShopClearUserInventory(const player, ShopItem: ...);
+
+/**
  * Creates a variable to localize the title in the store.
  * It takes an integer as its value.
  *
