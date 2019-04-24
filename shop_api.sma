@@ -455,10 +455,13 @@ public NativeHandle_ClearUserInventory(amxx, params)
         for (new i = param_except; i <= params; i++) {
             iItem = get_param(i);
 
-            if (FindItemInInventory(iPlayer, iItem) != INVALID_HANDLE) {
-                bFind = true;
-                ArrayPushCell(iArrayCopy, iItem);
+            if (FindItemInInventory(iPlayer, iItem) == INVALID_HANDLE) {
+                log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i, param %i). Item not found in player inventory.", LOG_PREFIX, iItem, i);
+                return false;
             }
+
+            bFind = true;
+            ArrayPushCell(iArrayCopy, iItem);
         }
 
         ArrayDestroy(g_sPlayerData[iPlayer][PlayerInventory]);
