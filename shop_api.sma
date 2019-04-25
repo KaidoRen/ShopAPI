@@ -32,6 +32,16 @@ enum any: PlayerDataProperties
     Trie: PlayerItemData
 };
 
+enum any: ForwardProperties
+{
+    ShopFunc: ForwardFunc,
+    bool: ForwardSingle,
+    bool: ForwardDisable,
+    ForwardHandle,
+    ForwardItem,
+    ForwardPlugin
+};
+
 new Array: g_pItemsVec, Array: g_pForwardsVec, Trie: g_pPlaceholdersAssoc;
 new g_sPlayerData[MAX_PLAYERS + 1][PlayerDataProperties];
 
@@ -46,6 +56,10 @@ public plugin_init()
     register_menucmd(register_menuid("SHOP_API_MENU"), MENU_KEYS_ALL, "MenuHandle_ShopMenu");
 
     register_dictionary("shop.txt");
+
+    g_pPlaceholdersAssoc    = TrieCreate();
+    g_pItemsVec             = ArrayCreate(ItemProperties);
+    g_pForwardsVec          = ArrayCreate(ForwardProperties);
 }
 
 public client_disconnected(player)
@@ -151,16 +165,6 @@ SelectShopItem(const player, const item)
 
 /**************** API **********************/
 
-enum any: ForwardProperties
-{
-    ShopFunc: ForwardFunc,
-    bool: ForwardSingle,
-    bool: ForwardDisable,
-    ForwardHandle,
-    ForwardItem,
-    ForwardPlugin
-};
-
 #define CHECK_PLAYER(%0) \
     if (!(0 < %0 <= MaxClients)) { \
         log_error(AMX_ERR_NATIVE, "%s Player out of range (%i)", LOG_PREFIX, %0); \
@@ -169,10 +173,6 @@ enum any: ForwardProperties
 
 public plugin_natives()
 {
-    g_pPlaceholdersAssoc    = TrieCreate();
-    g_pItemsVec             = ArrayCreate(ItemProperties);
-    g_pForwardsVec          = ArrayCreate(ForwardProperties);
-
     // (ForwardNatives)
     {
         register_native("ShopRegisterEvent",            "NativeHandle_RegisterEvent");
