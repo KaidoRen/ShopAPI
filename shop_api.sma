@@ -6,7 +6,7 @@
 #pragma ctrlchar            '\'
 
 new const PLUGIN[] =        "Shop API";
-new const LOG_PREFIX[] = "[ShopAPI]";
+new const LOG_PREFIX[] =    "[ShopAPI]";
 
 const ITEMS_ON_PAGE_WITH_PAGINATOR = 7;
 const ITEMS_ON_PAGE_WITHOUT_PAGINATOR = 9;
@@ -26,8 +26,9 @@ enum any: ItemProperties
 enum any: PlayerDataProperties
 {
     PlayerCurrentPage,
-    Array: PlayerCurrentMenu,
+    PlayerAuthID[MAX_AUTHID_LENGTH],
     PlayerSelectItem[ITEMS_ON_PAGE_WITHOUT_PAGINATOR + 1],
+    Array: PlayerCurrentMenu,
     Array: PlayerInventory,
     Trie: PlayerItemData
 };
@@ -42,7 +43,7 @@ enum any: ForwardProperties
     ForwardPlugin
 };
 
-new Array: g_pItemsVec, Array: g_pForwardsVec, Trie: g_pPlaceholdersAssoc;
+new Array: g_pItemsVec, Array: g_pForwardsVec, Trie: g_pPlaceholdersAssoc, Trie: g_pPlayersData;
 new g_sPlayerData[MAX_PLAYERS + 1][PlayerDataProperties];
 
 public plugin_init()
@@ -57,15 +58,22 @@ public plugin_init()
 
     register_dictionary("shop.txt");
 
+    g_pPlayersData          = TrieCreate();
     g_pPlaceholdersAssoc    = TrieCreate();
     g_pItemsVec             = ArrayCreate(ItemProperties);
     g_pForwardsVec          = ArrayCreate(ForwardProperties);
 }
 
+public client_authorized(player, const authid[])
+{
+    arrayset(g_sPlayerData[player], 0, PlayerDataProperties);
+    TrieGetArray(g_pPlayersData, authid, g_sPlayerData[player], PlayerDataProperties);
+    copy(g_sPlayerData[player][PlayerAuthID], charsmax(g_sPlayerData[][PlayerAuthID]), authid);
+}
+
 public client_disconnected(player)
 {
-    g_sPlayerData[player][PlayerInventory] && ArrayDestroy(g_sPlayerData[player][PlayerInventory]);
-    arrayset(g_sPlayerData[player], 0, PlayerDataProperties);
+    TrieSetArray(g_pPlayersData, g_sPlayerData[player][PlayerAuthID], g_sPlayerData[player], PlayerDataProperties);
 }
 
 public CmdHandle_ShopMenu(const player)
@@ -396,7 +404,7 @@ public ItemFlag: NativeHandle_GetItemFlags(amxx)
         return IF_None;
     }
 
-    set_param_byref(param_buffer, _:sItemData[ItemFlags]);
+    set_param_byref(param_buffer, any: sItemData[ItemFlags]);
     return sItemData[ItemFlags];
 }
 
