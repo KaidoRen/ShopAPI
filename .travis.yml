@@ -1,12 +1,12 @@
 language: c
 
 env:
-    - AMXMODX_URL=https://www.amxmodx.org/amxxdrop/1.9/amxmodx-1.9.0-git5235-base-linux.tar.gz
+    - AMXMODX_URL=https://www.amxmodx.org/latest.php?os=linux&version=1.9&package=base
 
 matrix:
     fast_finish: true
     allow_failures:
-    - env: AMXMODX_URL=https://www.amxmodx.org/amxxdrop/1.9/amxmodx-1.9.0-git5235-base-linux.tar.gz
+    - env: AMXMODX_URL=https://www.amxmodx.org/latest.php?os=linux&version=1.9&package=base
 
 before_install:
     - sudo apt-get update
