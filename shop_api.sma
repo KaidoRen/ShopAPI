@@ -346,7 +346,7 @@ public NativeHandle_AttachToCategory(amxx)
     new const iCategory = get_param(param_category);
 
     new sCategoryData[CategoryProperties];
-    if (ArrayGetArray(g_pCategoriesVec, iCategory, sCategoryData)) {
+    if (!ArrayGetArray(g_pCategoriesVec, iCategory, sCategoryData)) {
         log_error(AMX_ERR_NATIVE, "%s Invalid category id (%i).", LOG_PREFIX, iCategory);
         return false;
     }
@@ -386,7 +386,7 @@ public NativeHandle_DetachFromCategory(amxx)
     new const iCategory = sItemData[ItemCategory];
 
     new sCategoryData[CategoryProperties];
-    if (ArrayGetArray(g_pCategoriesVec, iCategory, sCategoryData)) {
+    if (!ArrayGetArray(g_pCategoriesVec, iCategory, sCategoryData)) {
         log_error(AMX_ERR_NATIVE, "%s Invalid category id (%i).", LOG_PREFIX, iCategory);
         return false;
     }
