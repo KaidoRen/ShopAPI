@@ -11,6 +11,13 @@ new const LOG_PREFIX[] =    "[ShopAPI]";
 const ITEMS_ON_PAGE_WITH_PAGINATOR = 7;
 const ITEMS_ON_PAGE_WITHOUT_PAGINATOR = 9;
 
+enum any: CategoryProperties
+{
+    CategoryID,
+    CategoryName[SHOP_MAX_CATEGORY_NAME],
+    Array: CategoryItems
+};
+
 enum any: ItemProperties
 {
     ItemStrKey[SHOP_MAX_KEY_LENGTH],
@@ -19,6 +26,7 @@ enum any: ItemProperties
     ItemPlugin,
     ItemAccess,
     ItemDiscount,
+    ItemCategory,
     ItemFlag: ItemFlags,
     bool: ItemInventory
 };
@@ -43,7 +51,10 @@ enum any: ForwardProperties
     ForwardPlugin
 };
 
-new Array: g_pItemsVec, Array: g_pForwardsVec, Trie: g_pPlaceholdersAssoc, Trie: g_pPlayersData;
+new Array: g_pItemsVec, Array: g_pForwardsVec, 
+Trie: g_pPlaceholdersAssoc, Trie: g_pPlayersDataAssoc,
+Array: g_pCategoriesVec;
+
 new g_sPlayerData[MAX_PLAYERS + 1][PlayerDataProperties];
 
 public plugin_init()
@@ -58,22 +69,23 @@ public plugin_init()
 
     register_dictionary("shop.txt");
 
-    g_pPlayersData          = TrieCreate();
+    g_pPlayersDataAssoc     = TrieCreate();
     g_pPlaceholdersAssoc    = TrieCreate();
     g_pItemsVec             = ArrayCreate(ItemProperties);
     g_pForwardsVec          = ArrayCreate(ForwardProperties);
+    g_pCategoriesVec        = ArrayCreate(CategoryProperties);
 }
 
 public client_authorized(player, const authid[])
 {
     arrayset(g_sPlayerData[player], 0, PlayerDataProperties);
-    TrieGetArray(g_pPlayersData, authid, g_sPlayerData[player], PlayerDataProperties);
+    TrieGetArray(g_pPlayersDataAssoc, authid, g_sPlayerData[player], PlayerDataProperties);
     copy(g_sPlayerData[player][PlayerAuthID], charsmax(g_sPlayerData[][PlayerAuthID]), authid);
 }
 
 public client_disconnected(player)
 {
-    TrieSetArray(g_pPlayersData, g_sPlayerData[player][PlayerAuthID], g_sPlayerData[player], PlayerDataProperties);
+    TrieSetArray(g_pPlayersDataAssoc, g_sPlayerData[player][PlayerAuthID], g_sPlayerData[player], PlayerDataProperties);
 }
 
 public CmdHandle_ShopMenu(const player)
@@ -189,6 +201,15 @@ public plugin_natives()
         register_native("ShopEnableEvent",              "NativeHandle_EnableEvent");
     }
 
+    // (Categories)
+    {
+        register_native("ShopCreateCategory",           "NativeHandle_CreateCategory");
+        register_native("ShopAttachToCategory",         "NativeHandle_AttachToCategory");
+        register_native("ShopDetachFromCategory",       "NativeHandle_DetachFromCategory");
+        register_native("ShopCategoryGetSize",          "NativeHandle_CategoryGetSize");
+        register_native("ShopCategoryGetName",          "NativeHandle_CategoryGetName");
+    }
+
     // (ItemNatives)
     {
         register_native("ShopPushItem",                 "NativeHandle_PushItem");
@@ -286,6 +307,97 @@ public bool: NativeHandle_EnableEvent(amxx)
     return ToggleState(get_param(param_forward), true);
 }
 
+public NativeHandle_CreateCategory(amxx, params)
+{
+    enum { param_name, param_items };
+
+    new sCategoryData[CategoryProperties];
+    if (!get_string(param_name, sCategoryData[CategoryName], charsmax(sCategoryData[CategoryName]))) {
+        log_error(AMX_ERR_NATIVE, "%s Category name can't be empty.", LOG_PREFIX);
+        return INVALID_HANDLE;
+    }
+
+    sCategoryData[CategoryID] = ArraySize(g_pCategoriesVec);
+    sCategoryData[CategoryItems] = ArrayCreate(ItemProperties);
+    
+    if (params >= param_items) {
+        new sItemData[ItemProperties], iItem;
+        for (new i = param_items; i <= params; i++) {
+            iItem = get_param_byref(i);
+
+            if (!GetItemData(SHOP_GLOBAL_INFO, iItem, sItemData)) {
+                log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i, param %i).", LOG_PREFIX, iItem, i);
+                return INVALID_HANDLE;
+            }
+
+            sItemData[ItemCategory] = sCategoryData[CategoryID];
+            ArrayPushCell(sCategoryData[CategoryItems], iItem);
+            ArraySetArray(g_pItemsVec, iItem, sItemData);
+        }
+    }
+
+    return ArrayPushArray(g_pCategoriesVec, sCategoryData);
+}
+
+public NativeHandle_AttachToCategory(amxx)
+{
+    enum { param_category, param_item };
+
+    new const iCategory = get_param(param_category);
+
+    new sCategoryData[CategoryProperties];
+    if (ArrayGetArray(g_pCategoriesVec, iCategory, sCategoryData)) {
+        log_error(AMX_ERR_NATIVE, "%s Invalid category id (%i).", LOG_PREFIX, iCategory);
+        return false;
+    }
+
+    new const iItem = get_param(param_item);
+
+    new sItemData[ItemProperties];
+    if (!GetItemData(SHOP_GLOBAL_INFO, iItem, sItemData)) {
+        log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, iItem);
+        return false;
+    }
+
+    sItemData[ItemCategory] = iCategory;
+    ArrayPushCell(sCategoryData[CategoryItems], iItem);
+    ArraySetArray(g_pItemsVec, iItem, sItemData);
+
+    return true;
+}
+
+public NativeHandle_DetachFromCategory(amxx)
+{
+    enum { param_item };
+
+    new const iItem = get_param(param_item);
+
+    new sItemData[ItemProperties];
+    if (!GetItemData(SHOP_GLOBAL_INFO, iItem, sItemData)) {
+        log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, iItem);
+        return false;
+    }
+
+    if (sItemData[ItemCategory] == INVALID_HANDLE) {
+        log_error(AMX_ERR_NATIVE, "%s The item %i not attached to any categories.", LOG_PREFIX, iItem);
+        return false;
+    }
+
+    new const iCategory = sItemData[ItemCategory];
+
+    new sCategoryData[CategoryProperties];
+    if (ArrayGetArray(g_pCategoriesVec, iCategory, sCategoryData)) {
+        log_error(AMX_ERR_NATIVE, "%s Invalid category id (%i).", LOG_PREFIX, iCategory);
+        return false;
+    }
+
+    sItemData[ItemCategory] = INVALID_HANDLE;
+    ArraySetArray(g_pItemsVec, iItem, sItemData);
+    ArrayDeleteItem(sCategoryData[CategoryItems], iItem);
+
+    return true;
+}
+
 public NativeHandle_PushItem(amxx)
 {
     enum { param_name = 1, param_cost, param_access, param_flags, param_discount, param_inventory, param_key };
@@ -303,6 +415,7 @@ public NativeHandle_PushItem(amxx)
     sItemData[ItemDiscount]     = get_param(param_discount);
     sItemData[ItemFlags]        = ItemFlag: get_param(param_flags);
     sItemData[ItemInventory]    = bool: get_param(param_inventory);
+    sItemData[ItemCategory]     = INVALID_HANDLE;
 
     if (get_string(param_key, sItemData[ItemStrKey], charsmax(sItemData[ItemStrKey])) 
         && ArrayFindString(g_pItemsVec, sItemData[ItemStrKey]) != INVALID_HANDLE) {
@@ -616,7 +729,7 @@ stock RemoveColorSymbols(buffer[])
     replace_all(buffer, SHOP_MAX_ITEM_NAME_LENGTH - 1, "\\d", "");
 }
 
-stock GetItemData(player, item, buffer[ItemProperties])
+stock GetItemData(player, item, buffer[ItemProperties] = NULL_STRING)
 {
     new bool: bSuccess;
     player && g_sPlayerData[player][PlayerItemData] && (bSuccess = TrieGetArray(g_sPlayerData[player][PlayerItemData], fmt("%i", item), buffer, ItemProperties));

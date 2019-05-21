@@ -3,6 +3,7 @@
 #endif
 #define _shopapi_const_included
 
+#define SHOP_MAX_CATEGORY_NAME 32
 #define SHOP_MAX_PLACEHOLDER_LENGTH 32
 #define SHOP_MAX_PLACEHOLDER_VAL_LENGTH 128
 #define SHOP_MAX_ITEM_NAME_LENGTH 128
