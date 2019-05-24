@@ -1,4 +1,4 @@
-#include <amxmodx>
+#include <amxmisc>
 #include <shopapi>
 #include <cstrike>
 
@@ -630,36 +630,74 @@ public bool: NativeHandle_RemoveUserItem(amxx)
     enum { param_player = 1, param_item };
 
     new const iPlayer = get_param(param_player);
+    new const iItem = get_param(param_item);
 
-    CHECK_PLAYER(iPlayer)
+    if (iPlayer) {
+        return RemoveUserItem(iPlayer, iItem);
+    }
+    else {
+        new sPlayers[MAX_PLAYERS], iPlayers;
+        get_players_ex(sPlayers, iPlayers, GetPlayers_ExcludeBots|GetPlayers_ExcludeHLTV);
 
-    new const iFindItem = FindItemInInventory(iPlayer, get_param(param_item));
+        for (new i; i < iPlayers; i++) {
+            RemoveUserItem(sPlayers[i], iItem);
+        }
+    }
+
+    return true;
+}
+
+stock bool: RemoveUserItem(const player, const item)
+{
+    CHECK_PLAYER(player)
+
+    new const iFindItem = FindItemInInventory(player, item);
 
     if (iFindItem <= INVALID_HANDLE) {
         return false;
     }
 
-    ArrayDeleteItem(g_sPlayerData[iPlayer][PlayerInventory], iFindItem);
+    ArrayDeleteItem(g_sPlayerData[player][PlayerInventory], iFindItem);
+
     return true;
 }
 
 public NativeHandle_ClearUserInventory(amxx, params)
 {
-    enum { param_player = 1, param_except };
+    enum { param_player = 1 };
 
     new const iPlayer = get_param(param_player);
+    
+    if (iPlayer) {
+        return ClearUserInventory(iPlayer, params);
+    }
+    else {
+        new sPlayers[MAX_PLAYERS], iPlayers;
+        get_players_ex(sPlayers, iPlayers, GetPlayers_ExcludeBots|GetPlayers_ExcludeHLTV);
 
-    CHECK_PLAYER(iPlayer)
+        for (new i; i < iPlayers; i++) {
+            ClearUserInventory(sPlayers[i], params);
+        }
+    }
+
+    return true;
+}
+
+stock bool: ClearUserInventory(const player, const params)
+{
+    enum { param_except = 2 };
+
+    CHECK_PLAYER(player)
 
     if (params < param_except) {
-        ArrayClear(g_sPlayerData[iPlayer][PlayerInventory]);
+        ArrayClear(g_sPlayerData[player][PlayerInventory]);
     }
     else {
         new Array: iArrayCopy = ArrayCreate(), bool: bFind, iItem;
         for (new i = param_except; i <= params; i++) {
             iItem = get_param_byref(i);
 
-            if (FindItemInInventory(iPlayer, iItem) == INVALID_HANDLE) {
+            if (FindItemInInventory(player, iItem) == INVALID_HANDLE) {
                 log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i, param #%i). Item not found in player inventory.", LOG_PREFIX, iItem, i);
                 return false;
             }
@@ -668,10 +706,10 @@ public NativeHandle_ClearUserInventory(amxx, params)
             ArrayPushCell(iArrayCopy, iItem);
         }
 
-        ArrayDestroy(g_sPlayerData[iPlayer][PlayerInventory]);
+        ArrayDestroy(g_sPlayerData[player][PlayerInventory]);
 
         if (bFind) {
-            g_sPlayerData[iPlayer][PlayerInventory] = iArrayCopy;
+            g_sPlayerData[player][PlayerInventory] = iArrayCopy;
             return true;
         }
 
