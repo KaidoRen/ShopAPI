@@ -98,18 +98,9 @@ public CmdHandle_ShopMenu(const player)
         return PLUGIN_HANDLED;
     }
 
-    new sCategoryData[CategoryProperties];
-    for (new i; i < ArraySize(g_pCategoriesVec); i++) {
-        ArrayGetArray(g_pCategoriesVec, i, sCategoryData);
-
-        if (ArraySize(sCategoryData[CategoryItems])) {
-            g_sPlayerData[player][PlayerSelectCategory] = INVALID_HANDLE;
-            CreateMenu(player, g_sPlayerData[player][PlayerCurrentPage] = 0, g_sPlayerData[player][PlayerCategoryMenu] = true);
-            return PLUGIN_HANDLED;
-        }
-    }
-
-    CreateMenu(player, g_sPlayerData[player][PlayerCurrentPage] = 0);
+    new const bool: bCategoriesExists = CheckExistsCategories();
+    !bCategoriesExists && (g_sPlayerData[player][PlayerSelectCategory] = INVALID_HANDLE);
+    CreateMenu(player, g_sPlayerData[player][PlayerCurrentPage] = 0, g_sPlayerData[player][PlayerCategoryMenu] = bCategoriesExists);
 
     return PLUGIN_HANDLED;
 }
@@ -868,6 +859,24 @@ stock DetachItemFromAnyCategories(const any: withoutCategory, const item)
         findID = ArrayFindValue(sCategoryData[CategoryItems], item);
         findID != INVALID_HANDLE && ArrayDeleteItem(sCategoryData[CategoryItems], findID);
     }
+}
+
+stock bool: CheckExistsCategories()
+{
+    new const iSize = ArraySize(g_pCategoriesVec);
+    if (iSize < 2) {
+        return false;
+    }
+
+    new sCategoryData[CategoryProperties];
+    // without 0 ('other' category)
+    for (new i = 1; i < iSize; i++) {
+        if (ArrayGetArray(g_pCategoriesVec, i, sCategoryData) && ArraySize(sCategoryData[CategoryItems])) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**************** END UTILS ****************/
