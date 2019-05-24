@@ -144,6 +144,13 @@ native bool: ShopSetItemInfo(const player, const ShopItem: item, ItemProp: prop,
 native ShopItem: ShopFindItemByKey(const strkey[SHOP_MAX_KEY_LENGTH]);
 
 /**
+ * Returns a items count.
+ *
+ * @note                Item IDs start at 0 and end at ShopGetItemsCount()-1.
+ */
+native ShopGetItemsCount();
+
+/**
  * Checks existence a item in inventory of player.
  *
  * @param player        Player id

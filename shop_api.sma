@@ -231,7 +231,7 @@ public plugin_natives()
         register_native("ShopEnableEvent",              "NativeHandle_EnableEvent");
     }
 
-    // (Categories)
+    // (CategoryNatives)
     {
         register_native("ShopCreateCategory",           "NativeHandle_CreateCategory");
         register_native("ShopAttachToCategory",         "NativeHandle_AttachToCategory");
@@ -249,6 +249,7 @@ public plugin_natives()
         register_native("ShopSetItemInfo",              "NativeHandle_SetItemInfo");
         register_native("ShopGetItemFlags",             "NativeHandle_GetItemFlags");
         register_native("ShopFindItemByKey",            "NativeHandle_FindItemByKey");
+        register_native("ShopGetItemsCount",            "NativeHandle_GetItemsCount");
     }
 
     // (PlayerNatives)
@@ -614,6 +615,11 @@ public NativeHandle_FindItemByKey(amxx)
     return ArrayFindString(g_pItemsVec, szStringKey);
 }
 
+public NativeHandle_GetItemsCount(amxx)
+{
+    return ArraySize(g_pItemsVec);
+}
+
 public bool: NativeHandle_HasUserItem(amxx)
 {
     enum { param_player = 1, param_item };
@@ -667,7 +673,7 @@ public NativeHandle_ClearUserInventory(amxx, params)
     enum { param_player = 1 };
 
     new const iPlayer = get_param(param_player);
-    
+
     if (iPlayer) {
         return ClearUserInventory(iPlayer, params);
     }
