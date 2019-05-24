@@ -22,6 +22,7 @@ enum any: ItemProperties
 {
     ItemStrKey[SHOP_MAX_KEY_LENGTH],
     ItemName[SHOP_MAX_ITEM_NAME_LENGTH],
+    ItemCmd[SHOP_MAX_ITEM_CMD_LENGTH],
     ItemCost,
     ItemPlugin,
     ItemAccess,
@@ -55,7 +56,7 @@ enum any: ForwardProperties
 
 new Array: g_pItemsVec, Array: g_pForwardsVec, 
 Trie: g_pPlaceholdersAssoc, Trie: g_pPlayersDataAssoc,
-Array: g_pCategoriesVec;
+Array: g_pCategoriesVec, Trie: g_pItemsWithCmdAssoc;
 
 new g_sPlayerData[MAX_PLAYERS + 1][PlayerDataProperties];
 
@@ -72,6 +73,7 @@ public plugin_init()
 
     register_dictionary("shop.txt");
 
+    g_pItemsWithCmdAssoc    = TrieCreate();
     g_pPlayersDataAssoc     = TrieCreate();
     g_pPlaceholdersAssoc    = TrieCreate();
     g_pItemsVec             = ArrayCreate(ItemProperties);
@@ -104,6 +106,20 @@ public CmdHandle_ShopMenu(const player)
     CreateMenu(player, g_sPlayerData[player][PlayerCurrentPage] = 0, g_sPlayerData[player][PlayerCategoryMenu] = bCategoriesExists);
 
     return PLUGIN_HANDLED;
+}
+
+public CmdHandle_BuyItem(const player)
+{
+    new szCmd[4 /*'say '*/], szArg[SHOP_MAX_ITEM_CMD_LENGTH];
+    
+    read_argv(0, szCmd, charsmax(szCmd));
+    read_args(szArg, charsmax(szArg));
+    remove_quotes(szArg);
+
+    new iItem;
+    if (TrieGetCell(g_pItemsWithCmdAssoc, fmt("%s %s", szCmd, szArg), iItem)) {
+        SelectShopItem(player, iItem);
+    }
 }
 
 const KEY_BACK = 7;
@@ -480,7 +496,7 @@ public NativeHandle_CategorySetName(amxx)
 
 public NativeHandle_PushItem(amxx)
 {
-    enum { param_name = 1, param_cost, param_access, param_flags, param_discount, param_inventory, param_key };
+    enum { param_name = 1, param_cost, param_access, param_flags, param_discount, param_inventory, param_key, param_cmd };
 
     new sItemData[ItemProperties];
 
@@ -502,7 +518,14 @@ public NativeHandle_PushItem(amxx)
             return INVALID_HANDLE;
     }
 
+    get_string(param_cmd, sItemData[ItemCmd], charsmax(sItemData[ItemCmd]));
+
     new const iID = ArrayPushArray(g_pItemsVec, sItemData);
+    
+    if (sItemData[ItemCmd][0]) {
+        TrieSetCell(g_pItemsWithCmdAssoc, sItemData[ItemCmd], iID);
+        register_clcmd(sItemData[ItemCmd], "CmdHandle_BuyItem");
+    }
 
     ShopAttachToCategory(ShopOtherCategory, ShopItem: iID);
 
@@ -526,7 +549,11 @@ public NativeHandle_DestroyItem(amxx)
 
 public bool: NativeHandle_GetItemInfo(amxx)
 {
-    enum { param_player = 1, param_item, param_namebuffer, param_namelen, param_cost, param_costwithdiscount, param_discount, param_access, param_keybuffer, param_keylen };
+    enum {
+        param_player = 1, param_item, param_namebuffer, param_namelen, 
+        param_cost, param_costwithdiscount, param_discount, param_access, 
+        param_keybuffer, param_keylen, param_cmdbuffer, param_cmdlen 
+    };
 
     new const iPlayer = get_param(param_player), iItem = get_param(param_item);
 
@@ -542,12 +569,15 @@ public bool: NativeHandle_GetItemInfo(amxx)
 
     RemoveColorSymbols(sItemData[ItemName]);
 
-    new const iCost = sItemData[ItemDiscount] && get_param(param_costwithdiscount) ? GET_COST_WITH_DISCOUNT(sItemData[ItemCost], sItemData[ItemDiscount]) : sItemData[ItemCost];
+    new const iCost = sItemData[ItemDiscount] && get_param(param_costwithdiscount) 
+    ? GET_COST_WITH_DISCOUNT(sItemData[ItemCost], sItemData[ItemDiscount]) : sItemData[ItemCost];
+
     set_string(param_namebuffer,    sItemData[ItemName],    get_param(param_namelen));
     set_param_byref(param_cost,     iCost);
     set_param_byref(param_discount, sItemData[ItemDiscount]);
     set_param_byref(param_access,   sItemData[ItemAccess]);
     set_string(param_keybuffer,     sItemData[ItemStrKey],  get_param(param_keylen));
+    set_string(param_cmdbuffer,     sItemData[ItemCmd],     get_param(param_cmdlen));
 
     return true;
 }

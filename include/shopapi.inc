@@ -77,11 +77,12 @@ native bool: ShopDisableEvent(ShopEvent: event);
 * @param discount       Default discount
 * @param inventory      Save item in inventory
 * @param strkey         Unique key to search for the item
+* @param cmd            Command for purchase of this item
 *
 * @return               Index of the new item
 * @error                -1 if creation failed
 */
-native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_ALL, const ItemFlag: flags = IF_None, const discount = 0, const bool: inventory = false, const strkey[SHOP_MAX_KEY_LENGTH] = "");
+native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_ALL, const ItemFlag: flags = IF_None, const discount = 0, const bool: inventory = false, const strkey[SHOP_MAX_KEY_LENGTH] = "", const cmd[SHOP_MAX_ITEM_CMD_LENGTH] = "");
 
 /**
 * Delete item.
@@ -105,10 +106,12 @@ native ShopDestroyItem(const ShopItem: item);
 * @param access         Variable to store access flags to
 * @param strkey         Item string key buffer
 * @param keylen         Item string key buffer len
+* @param cmd            Item cmd buffer
+* @param cmdlen         Item cmd buffer len
 *
 * @return               Item exists (true/false)
 */
-native bool: ShopGetItemInfo(const player, const ShopItem: item, const name[] = "", const namelen = 0, const &cost = 0, bool: costWithDiscount = true, const &discount = 0, const &access = 0, const strkey[] = "", const keylen = 0);
+native bool: ShopGetItemInfo(const player, const ShopItem: item, const name[] = "", const namelen = 0, const &cost = 0, bool: costWithDiscount = true, const &discount = 0, const &access = 0, const strkey[] = "", const keylen = 0, const cmd[] = "", const cmdlen = 0);
 
 /**
 * Sets info about a item.
