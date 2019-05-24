@@ -199,3 +199,49 @@ native bool: ShopSetPlaceholderFloat(const placeholder[SHOP_MAX_PLACEHOLDER_LENG
  * @param value         Placeholder value
  */
 native bool: ShopSetPlaceholderString(const placeholder[SHOP_MAX_PLACEHOLDER_LENGTH], const value[SHOP_MAX_PLACEHOLDER_VAL_LENGTH], any: ...);
+
+/**
+ * Create a category.
+ *
+ * @param name          Category name
+ * @param ...           Items to be added to this category
+ *
+ * @return              Category id
+ */
+native ShopCategory: ShopCreateCategory(const name[], ShopItem: ...);
+
+/**
+ * Attaching an item to the specified category.
+ *
+ * @param category      Category id
+ * @param item          Item id
+ */
+native bool: ShopAttachToCategory(const ShopCategory: category, const ShopItem: item);
+
+/**
+ * Returns the number of items in a category.
+ *
+ * @param category      Category id
+ */
+native ShopCategoryGetSize(const ShopCategory: category);
+
+/**
+ * Gets the category name
+ *
+ * @param category      Category id
+ * @param buffer        String buffer to copy to
+ * @param len           Buffer length
+ *
+ * @return              Number of cells written.
+ */
+native ShopCategoryGetName(const ShopCategory: category, const buffer[], const len);
+
+/**
+ * Sets the category name
+ *
+ * @param category      Category id
+ * @param buffer        String buffer to copy to
+ *
+ * @return              Number of cells written.
+ */
+native bool: ShopCategorySetName(const ShopCategory: category, const name[]);
