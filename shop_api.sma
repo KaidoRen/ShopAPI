@@ -538,6 +538,8 @@ public bool: NativeHandle_GetItemInfo(amxx)
         return false;
     }
 
+    RemoveColorSymbols(sItemData[ItemName]);
+
     new const iCost = sItemData[ItemDiscount] && get_param(param_costwithdiscount) ? GET_COST_WITH_DISCOUNT(sItemData[ItemCost], sItemData[ItemDiscount]) : sItemData[ItemCost];
     set_string(param_namebuffer,    sItemData[ItemName],    get_param(param_namelen));
     set_param_byref(param_cost,     iCost);
