@@ -1,6 +1,9 @@
 [en]
 SHOP_MENU_TITLE = AMXX Shop^n\wYour money: \r:money\w$
 SHOP_NO_AVAILABLE_ITEMS = Sorry, but there are no^nproducts available for you.
+SHOP_OTHER_CATEGORY_NAME = Other
+SHOP_CURRENT_CATEGORY = Category:  \d%s\w
+SHOP_SELECT_CATEGORY = Select a category:
 
 SHOP_EXIT_MENU = Exit
 SHOP_BACK_MENU = Back
@@ -9,6 +12,9 @@ SHOP_NEXT_MENU = Next
 [ru]
 SHOP_MENU_TITLE = AMXX Shop^n\wВаши деньги: \r:money\w$
 SHOP_NO_AVAILABLE_ITEMS = \dИзвините, но доступных для Вас^nтоваров пока нет :(
+SHOP_OTHER_CATEGORY_NAME = Другое
+SHOP_CURRENT_CATEGORY = Категория:  \d%s\w
+SHOP_SELECT_CATEGORY = Выберите категорию:
 
 SHOP_EXIT_MENU = Выход
 SHOP_BACK_MENU = Назад
