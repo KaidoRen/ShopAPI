@@ -65,6 +65,7 @@ public plugin_init()
 
     register_clcmd("say /shop",         "CmdHandle_ShopMenu");
     register_clcmd("say_team /shop",    "CmdHandle_ShopMenu");
+    register_clcmd("shop",              "CmdHandle_ShopMenu");
 	
     const MENU_KEYS_ALL = 1023;
     register_menucmd(register_menuid("SHOP_API_MENU"), MENU_KEYS_ALL, "MenuHandle_ShopMenu");
