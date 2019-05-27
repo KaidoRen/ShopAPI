@@ -8,11 +8,6 @@
 #pragma semicolon           1
 #pragma ctrlchar            '\'
 
-#define Switch(%0) new any: __switchVar = %0;
-#define FirstCase(%0) if (__switchVar == %0)
-#define SubCase(%0) else if (__switchVar == %0)
-#define Default() else
-
 new const PLUGIN[] =        "Shop API: Stub Plugin";
 
 const ADMIN_FLAG            = ADMIN_LEVEL_H;
@@ -50,12 +45,12 @@ public plugin_init()
 
     CreateCVars();
 
-    g_sItemData[ShopItem_Gravity][ItemID] = ShopPushItem("Гравитация", get_pcvar_num(g_sItemData[ShopItem_Gravity][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true);
-    g_sItemData[ShopItem_Speed][ItemID] = ShopPushItem("Скорость", get_pcvar_num(g_sItemData[ShopItem_Speed][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true);
-    g_sItemData[ShopItem_HP][ItemID] = ShopPushItem(fmt("%i HP", g_sItemData[ShopItem_HP][ItemAmount]), get_pcvar_num(g_sItemData[ShopItem_HP][ItemCostCvar]), .flags = IF_OnlyAlive);
-    g_sItemData[ShopItem_HE][ItemID] = ShopPushItem("Взрывная граната", get_pcvar_num(g_sItemData[ShopItem_HE][ItemCostCvar]), .flags = IF_OnlyAlive);
-    g_sItemData[ShopItem_Deagle][ItemID] = ShopPushItem(fmt("Deagle %i патрона", g_sItemData[ShopItem_Deagle][ItemAmount]), get_pcvar_num(g_sItemData[ShopItem_Deagle][ItemCostCvar]), .flags = IF_OnlyAlive);
-    g_sItemData[ShopItem_Bhop][ItemID] = ShopPushItem("Распрыжка", get_pcvar_num(g_sItemData[ShopItem_Bhop][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true);
+    g_sItemData[ShopItem_Gravity][ItemID] = ShopPushItem("Гравитация", get_pcvar_num(g_sItemData[ShopItem_Gravity][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true, .data = ShopItem_Gravity);
+    g_sItemData[ShopItem_Speed][ItemID] = ShopPushItem("Скорость", get_pcvar_num(g_sItemData[ShopItem_Speed][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true, .data = ShopItem_Speed);
+    g_sItemData[ShopItem_HP][ItemID] = ShopPushItem(fmt("%i HP", g_sItemData[ShopItem_HP][ItemAmount]), get_pcvar_num(g_sItemData[ShopItem_HP][ItemCostCvar]), .flags = IF_OnlyAlive, .data = ShopItem_HP);
+    g_sItemData[ShopItem_HE][ItemID] = ShopPushItem("Взрывная граната", get_pcvar_num(g_sItemData[ShopItem_HE][ItemCostCvar]), .flags = IF_OnlyAlive, .data = ShopItem_HE);
+    g_sItemData[ShopItem_Deagle][ItemID] = ShopPushItem(fmt("Deagle %i патрона", g_sItemData[ShopItem_Deagle][ItemAmount]), get_pcvar_num(g_sItemData[ShopItem_Deagle][ItemCostCvar]), .flags = IF_OnlyAlive, .data = ShopItem_Deagle);
+    g_sItemData[ShopItem_Bhop][ItemID] = ShopPushItem("Распрыжка", get_pcvar_num(g_sItemData[ShopItem_Bhop][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true, .data = ShopItem_Bhop);
 
     ShopRegisterEvent(Shop_ItemBuy, "Shop_ItemBuyHandle");
 }
@@ -97,42 +92,43 @@ public Shop_ItemBuyHandle(const player, const ShopItem: item, const BuyState: bu
     new const szName[SHOP_MAX_ITEM_NAME_LENGTH], iCost;
     ShopGetItemInfo(player, item, szName, charsmax(szName), iCost);
 
-    switch (buyState) {
-        case Buy_NotEnoughMoney: {
-            // For purchase is missing N$
-            client_print_color(player, print_team_default, "%s Для покупки не хватает\4 %i\1$.", CHAT_PREFIX, iCost - cs_get_user_money(player));
-        }
+    if (buyState == Buy_NotEnoughMoney) {
+        // For purchase is missing N$
+        client_print_color(player, print_team_default, "%s Для покупки не хватает\4 %i\1$.", CHAT_PREFIX, iCost - cs_get_user_money(player));
+    }
+    else if (buyState == Buy_PlayerAlive || buyState == Buy_PlayerDead) {
+        // You must be alive or dead to purchase this item
+        client_print_color(player, print_team_default, "%s Для покупки этого предмета нужно быть %s.", CHAT_PREFIX, buyState == Buy_PlayerAlive ? "мертвым" : "живым");
+    }
+    else if (buyState == Buy_OK) {
+        // Successfully purchase
+        client_print_color(player, print_team_default, "%s Вы купили предмет\4 %s\1 за\4 %i\1.", CHAT_PREFIX, szName, iCost);
 
-        case Buy_OK: {
-            // Successfully purchase
-            client_print_color(player, print_team_default, "%s Вы купили предмет\4 %s\1 за\4 %i\1.", CHAT_PREFIX, szName, iCost);
+        switch (ShopGetItemCustomData(item)) {
+            case ShopItem_Gravity: {
+                set_pev(player, pev_gravity, g_sItemData[ShopItem_Gravity][ItemAmount]);
+            }
 
-            Switch(item) {
-                FirstCase(g_sItemData[ShopItem_Gravity][ItemID]) {
-                    set_pev(player, pev_gravity, g_sItemData[ShopItem_Gravity][ItemAmount]);
+            case ShopItem_Speed: {
+                set_pev(player, pev_maxspeed, g_sItemData[ShopItem_Speed][ItemAmount]);
+            }
+
+            case ShopItem_HP: {
+                set_pev(player, pev_health, float(g_sItemData[ShopItem_HP][ItemAmount]));
+            }
+
+            case ShopItem_HE: {
+                give_item(player, "weapon_hegrenade");
+            }
+
+            case ShopItem_Deagle: {
+                if (user_has_weapon(player, CSW_DEAGLE)) {
+                    // Deagle already exists
+                    client_print_color(player, print_team_default, "%s Покупка невозможна, у вас уже есть этот предмет.", CHAT_PREFIX);
+                    return SHOP_HANDLED;
                 }
 
-                SubCase(g_sItemData[ShopItem_Speed][ItemID]) {
-                    set_pev(player, pev_maxspeed, g_sItemData[ShopItem_Speed][ItemAmount]);
-                }
-
-                SubCase(g_sItemData[ShopItem_HP][ItemID]) {
-                    set_pev(player, pev_health, float(g_sItemData[ShopItem_HP][ItemAmount]));
-                }
-
-                SubCase(g_sItemData[ShopItem_HE][ItemID]) {
-                    give_item(player, "weapon_hegrenade");
-                }
-
-                SubCase(g_sItemData[ShopItem_Deagle][ItemID]) {
-                    if (user_has_weapon(player, CSW_DEAGLE)) {
-                        // Deagle already exists
-                        client_print_color(player, print_team_default, "%s Покупка невозможна, у вас уже есть этот предмет.", CHAT_PREFIX);
-                        return SHOP_HANDLED;
-                    }
-
-                    cs_set_weapon_ammo(give_item(player, "weapon_deagle"), g_sItemData[ShopItem_Deagle][ItemAmount]);
-                }
+                cs_set_weapon_ammo(give_item(player, "weapon_deagle"), g_sItemData[ShopItem_Deagle][ItemAmount]);
             }
         }
     }
