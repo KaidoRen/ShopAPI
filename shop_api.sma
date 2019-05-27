@@ -775,13 +775,10 @@ stock bool: ClearUserInventory(const player, const params)
         for (new i = param_except; i <= params; i++) {
             iItem = get_param_byref(i);
 
-            if (FindItemInInventory(player, iItem) == INVALID_HANDLE) {
-                log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i, param #%i). Item not found in player inventory.", LOG_PREFIX, iItem, i);
-                return false;
+            if (FindItemInInventory(player, iItem) != INVALID_HANDLE) {
+                bFind = true;
+                ArrayPushCell(iArrayCopy, iItem);
             }
-
-            bFind = true;
-            ArrayPushCell(iArrayCopy, iItem);
         }
 
         ArrayDestroy(g_sPlayerData[player][PlayerInventory]);
