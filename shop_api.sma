@@ -506,7 +506,10 @@ public NativeHandle_FindCategoryByKey(amxx)
     enum { param_key = 1 };
 
     new szStringKey[32];
-    get_string(param_key, szStringKey, charsmax(szStringKey));
+    if (!get_string(param_key, szStringKey, charsmax(szStringKey))) {
+        log_error(AMX_ERR_NATIVE, "%s For find category string key can't be empty.", LOG_PREFIX);
+        return INVALID_HANDLE;
+    }
 
     return ArrayFindString(g_pCategoriesVec, szStringKey);
 }
@@ -658,7 +661,10 @@ public NativeHandle_FindItemByKey(amxx)
     enum { param_key = 1 };
 
     new szStringKey[32];
-    get_string(param_key, szStringKey, charsmax(szStringKey));
+    if (!get_string(param_key, szStringKey, charsmax(szStringKey))) {
+        log_error(AMX_ERR_NATIVE, "%s For find item string key can't be empty.", LOG_PREFIX);
+        return INVALID_HANDLE;
+    }
 
     return ArrayFindString(g_pItemsVec, szStringKey);
 }
