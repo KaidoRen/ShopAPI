@@ -13,7 +13,7 @@ const ITEMS_ON_PAGE_WITHOUT_PAGINATOR = 9;
 
 enum any: CategoryProperties
 {
-    CategoryID,
+    CategoryStrKey[SHOP_MAX_KEY_LENGTH],
     CategoryName[SHOP_MAX_CATEGORY_NAME_LENGTH],
     Array: CategoryItems
 };
@@ -256,6 +256,7 @@ public plugin_natives()
         register_native("ShopCategoryGetSize",          "NativeHandle_CategoryGetSize");
         register_native("ShopCategoryGetName",          "NativeHandle_CategoryGetName");
         register_native("ShopCategorySetName",          "NativeHandle_CategorySetName");
+        register_native("ShopFindCategoryByKey",        "NativeHandle_FindCategoryByKey");
     }
 
     // (ItemNatives)
@@ -358,7 +359,7 @@ public bool: NativeHandle_EnableEvent(amxx)
 
 public NativeHandle_CreateCategory(amxx, params)
 {
-    enum { param_name = 1, param_items };
+    enum { param_name = 1, param_strkey, param_items };
 
     new sCategoryData[CategoryProperties];
     if (!get_string(param_name, sCategoryData[CategoryName], charsmax(sCategoryData[CategoryName]))) {
@@ -366,7 +367,13 @@ public NativeHandle_CreateCategory(amxx, params)
         return INVALID_HANDLE;
     }
 
-    sCategoryData[CategoryID] = ArraySize(g_pCategoriesVec);
+    if (get_string(param_strkey, sCategoryData[CategoryStrKey], charsmax(sCategoryData[CategoryStrKey])) 
+        && ArrayFindString(g_pCategoriesVec, sCategoryData[CategoryStrKey]) != INVALID_HANDLE) {
+            log_error(AMX_ERR_NATIVE, "%s The string key must be unique (\"%s\" already exists).", LOG_PREFIX, sCategoryData[CategoryStrKey]);
+            return INVALID_HANDLE;
+    }
+
+    new const iCategory = ArraySize(g_pCategoriesVec);
     sCategoryData[CategoryItems] = ArrayCreate(ItemProperties);
     
     if (params >= param_items) {
@@ -379,14 +386,14 @@ public NativeHandle_CreateCategory(amxx, params)
                 return INVALID_HANDLE;
             }
 
-            sItemData[ItemCategory] = sCategoryData[CategoryID];
+            sItemData[ItemCategory] = iCategory;
             ArrayPushCell(sCategoryData[CategoryItems], iItem);
             ArraySetArray(g_pItemsVec, iItem, sItemData);
-            DetachItemFromAnyCategories(sCategoryData[CategoryID], iItem);
+            DetachItemFromAnyCategories(iCategory, iItem);
         }
     }
 
-    return sCategoryData[CategoryID] ? ArrayInsertArrayBefore(g_pCategoriesVec, ArraySize(g_pCategoriesVec) - 1, sCategoryData) : ArrayPushArray(g_pCategoriesVec, sCategoryData);
+    return iCategory ? ArrayInsertArrayBefore(g_pCategoriesVec, ArraySize(g_pCategoriesVec) - 1, sCategoryData) : ArrayPushArray(g_pCategoriesVec, sCategoryData);
 }
 
 public NativeHandle_AttachToCategory(amxx)
@@ -492,6 +499,16 @@ public NativeHandle_CategorySetName(amxx)
     copy(sCategoryData[CategoryName], charsmax(sCategoryData[CategoryName]), szName);
     
     return bool: ArraySetArray(g_pCategoriesVec, iCategory, sCategoryData);
+}
+
+public NativeHandle_FindCategoryByKey(amxx)
+{
+    enum { param_key = 1 };
+
+    new szStringKey[32];
+    get_string(param_key, szStringKey, charsmax(szStringKey));
+
+    return ArrayFindString(g_pCategoriesVec, szStringKey);
 }
 
 public NativeHandle_PushItem(amxx)

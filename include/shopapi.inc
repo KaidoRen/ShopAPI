@@ -23,6 +23,11 @@ enum ShopItem
     INVALID_SHOPITEM = -1
 };
 
+enum ShopCategory
+{
+    INVALID_CATEGORY = -1
+};
+
 enum
 {
     SHOP_GLOBAL_INFO,
@@ -142,7 +147,7 @@ native bool: ShopSetItemInfo(const player, const ShopItem: item, ItemProp: prop,
  * @param strkey
  *
  * @return              Item id
- * @error               -1 if can't find
+ * @error               -1 (INVALID_ITEM) if can't find
  */
 native ShopItem: ShopFindItemByKey(const strkey[SHOP_MAX_KEY_LENGTH]);
 
@@ -214,11 +219,12 @@ native bool: ShopSetPlaceholderString(const placeholder[SHOP_MAX_PLACEHOLDER_LEN
  * Create a category.
  *
  * @param name          Category name
+ * @param strkey        Unique key to search for the category
  * @param ...           Items to be added to this category
  *
  * @return              Category id
  */
-native ShopCategory: ShopCreateCategory(const name[], ShopItem: ...);
+native ShopCategory: ShopCreateCategory(const name[], const strkey[SHOP_MAX_KEY_LENGTH] = "", ShopItem: ...);
 
 /**
  * Attaching an item to the specified category.
@@ -255,3 +261,13 @@ native ShopCategoryGetName(const ShopCategory: category, const buffer[], const l
  * @return              Number of cells written.
  */
 native bool: ShopCategorySetName(const ShopCategory: category, const name[]);
+
+/**
+ * Find category by string key.
+ *
+ * @param strkey
+ *
+ * @return              Category id
+ * @error               -1 (INVALID_CATEGORY) if can't find
+ */
+native ShopCategory: ShopFindCategoryByKey(const strkey[SHOP_MAX_KEY_LENGTH]);
