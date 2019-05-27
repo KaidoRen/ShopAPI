@@ -83,11 +83,12 @@ native bool: ShopDisableEvent(ShopEvent: event);
 * @param inventory      Save item in inventory
 * @param strkey         Unique key to search for the item
 * @param cmd            Command for purchase of this item
+* @param data           Custom data
 *
 * @return               Index of the new item
 * @error                -1 if creation failed
 */
-native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_ALL, const ItemFlag: flags = IF_None, const discount = 0, const bool: inventory = false, const strkey[SHOP_MAX_KEY_LENGTH] = "", const cmd[SHOP_MAX_ITEM_CMD_LENGTH] = "");
+native ShopItem: ShopPushItem(const name[], const cost, const access = ADMIN_ALL, const ItemFlag: flags = IF_None, const discount = 0, const bool: inventory = false, const strkey[SHOP_MAX_KEY_LENGTH] = "", const cmd[SHOP_MAX_ITEM_CMD_LENGTH] = "", const any: data = 0);
 
 /**
 * Delete item.
@@ -157,6 +158,14 @@ native ShopItem: ShopFindItemByKey(const strkey[SHOP_MAX_KEY_LENGTH]);
  * @note                Item IDs start at 0 and end at ShopGetItemsCount()-1.
  */
 native ShopGetItemsCount();
+
+/**
+ * Returns a custom item data.
+ *
+ * @param item          Item id
+ * @error               -1 if invalid item index
+ */
+native any: ShopGetItemCustomData(const ShopItem: item);
 
 /**
  * Checks existence a item in inventory of player.

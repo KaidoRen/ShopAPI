@@ -28,6 +28,7 @@ enum any: ItemProperties
     ItemAccess,
     ItemDiscount,
     ItemCategory,
+    ItemCustomData,
     ItemFlag: ItemFlags,
     bool: ItemInventory
 };
@@ -268,6 +269,7 @@ public plugin_natives()
         register_native("ShopGetItemFlags",             "NativeHandle_GetItemFlags");
         register_native("ShopFindItemByKey",            "NativeHandle_FindItemByKey");
         register_native("ShopGetItemsCount",            "NativeHandle_GetItemsCount");
+        register_native("ShopGetItemCustomData",        "NativeHandle_GetItemCustomData");
     }
 
     // (PlayerNatives)
@@ -516,7 +518,7 @@ public NativeHandle_FindCategoryByKey(amxx)
 
 public NativeHandle_PushItem(amxx)
 {
-    enum { param_name = 1, param_cost, param_access, param_flags, param_discount, param_inventory, param_key, param_cmd };
+    enum { param_name = 1, param_cost, param_access, param_flags, param_discount, param_inventory, param_key, param_cmd, param_data };
 
     new sItemData[ItemProperties];
 
@@ -531,6 +533,7 @@ public NativeHandle_PushItem(amxx)
     sItemData[ItemDiscount]     = get_param(param_discount);
     sItemData[ItemFlags]        = ItemFlag: get_param(param_flags);
     sItemData[ItemInventory]    = bool: get_param(param_inventory);
+    sItemData[ItemCustomData]   = get_param(param_data);
 
     if (get_string(param_key, sItemData[ItemStrKey], charsmax(sItemData[ItemStrKey])) 
         && ArrayFindString(g_pItemsVec, sItemData[ItemStrKey]) != INVALID_HANDLE) {
@@ -672,6 +675,21 @@ public NativeHandle_FindItemByKey(amxx)
 public NativeHandle_GetItemsCount(amxx)
 {
     return ArraySize(g_pItemsVec);
+}
+
+public NativeHandle_GetItemCustomData(amxx)
+{
+    enum { param_item = 1 };
+
+    new const iItem = get_param(param_item);
+
+    new sItemData[ItemProperties];
+    if (!GetItemData(SHOP_GLOBAL_INFO, iItem, sItemData)) {
+        log_error(AMX_ERR_NATIVE, "%s Invalid item id (%i).", LOG_PREFIX, iItem);
+        return INVALID_HANDLE;
+    }
+
+    return sItemData[ItemCustomData];
 }
 
 public bool: NativeHandle_HasUserItem(amxx)
