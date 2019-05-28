@@ -32,7 +32,7 @@ enum ItemParams
     any: ItemAmount
 };
 
-new g_sItemData[ShopItems][ItemParams];
+new any: g_sItemData[ShopItems][ItemParams];
 
 public plugin_init()
 {
@@ -45,12 +45,12 @@ public plugin_init()
 
     CreateCVars();
 
-    g_sItemData[ShopItem_Gravity][ItemID] = ShopPushItem("Гравитация", get_pcvar_num(g_sItemData[ShopItem_Gravity][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true, .data = ShopItem_Gravity);
-    g_sItemData[ShopItem_Speed][ItemID] = ShopPushItem("Скорость", get_pcvar_num(g_sItemData[ShopItem_Speed][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true, .data = ShopItem_Speed);
-    g_sItemData[ShopItem_HP][ItemID] = ShopPushItem(fmt("%i HP", g_sItemData[ShopItem_HP][ItemAmount]), get_pcvar_num(g_sItemData[ShopItem_HP][ItemCostCvar]), .flags = IF_OnlyAlive, .data = ShopItem_HP);
-    g_sItemData[ShopItem_HE][ItemID] = ShopPushItem("Взрывная граната", get_pcvar_num(g_sItemData[ShopItem_HE][ItemCostCvar]), .flags = IF_OnlyAlive, .data = ShopItem_HE);
-    g_sItemData[ShopItem_Deagle][ItemID] = ShopPushItem(fmt("Deagle %i патрона", g_sItemData[ShopItem_Deagle][ItemAmount]), get_pcvar_num(g_sItemData[ShopItem_Deagle][ItemCostCvar]), .flags = IF_OnlyAlive, .data = ShopItem_Deagle);
-    g_sItemData[ShopItem_Bhop][ItemID] = ShopPushItem("Распрыжка", get_pcvar_num(g_sItemData[ShopItem_Bhop][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true, .data = ShopItem_Bhop);
+    g_sItemData[ShopItem_Gravity][ItemID] = ShopPushItem("Гравитация", get_pcvar_num(g_sItemData[ShopItem_Gravity][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true, .strkey = "gravity", .data = ShopItem_Gravity);
+    g_sItemData[ShopItem_Speed][ItemID] = ShopPushItem("Скорость", get_pcvar_num(g_sItemData[ShopItem_Speed][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true, .strkey = "speed", .data = ShopItem_Speed);
+    g_sItemData[ShopItem_HP][ItemID] = ShopPushItem(fmt("%i HP", g_sItemData[ShopItem_HP][ItemAmount]), get_pcvar_num(g_sItemData[ShopItem_HP][ItemCostCvar]), .flags = IF_OnlyAlive, .strkey = "healths", .data = ShopItem_HP);
+    g_sItemData[ShopItem_HE][ItemID] = ShopPushItem("Взрывная граната", get_pcvar_num(g_sItemData[ShopItem_HE][ItemCostCvar]), .flags = IF_OnlyAlive, .strkey = "he_grenade", .data = ShopItem_HE);
+    g_sItemData[ShopItem_Deagle][ItemID] = ShopPushItem(fmt("Deagle %i патрона", g_sItemData[ShopItem_Deagle][ItemAmount]), get_pcvar_num(g_sItemData[ShopItem_Deagle][ItemCostCvar]), .flags = IF_OnlyAlive, .strkey = "deagle", .data = ShopItem_Deagle);
+    g_sItemData[ShopItem_Bhop][ItemID] = ShopPushItem("Распрыжка", get_pcvar_num(g_sItemData[ShopItem_Bhop][ItemCostCvar]), .flags = IF_OnlyAlive, .inventory = true, .strkey = "bhop", .data = ShopItem_Bhop);
 
     ShopRegisterEvent(Shop_ItemBuy, "Shop_ItemBuyHandle");
 }
