@@ -113,16 +113,19 @@ public CmdHandle_ShopMenu(const player)
 
 public CmdHandle_BuyItem(const player)
 {
-    new szCmd[4 /*'say '*/], szArg[SHOP_MAX_ITEM_CMD_LENGTH];
+    new const iSpaceSymbol = 32, iArgs = read_argc();
+    new szCmd[SHOP_MAX_ITEM_CMD_LENGTH], iSize;
     
-    read_argv(0, szCmd, charsmax(szCmd));
-    read_args(szArg, charsmax(szArg));
-    remove_quotes(szArg);
+    iSize = read_argv(0, szCmd, charsmax(szCmd));
+    iArgs > 1 && (szCmd[iSize] = iSpaceSymbol) && read_args(szCmd[++iSize], charsmax(szCmd) - iSize);
+    remove_quotes(szCmd[iArgs > 1 ? iSize : 0]);
 
     new iItem;
-    if (TrieGetCell(g_pItemsWithCmdAssoc, fmt("%s %s", szCmd, szArg), iItem)) {
+    if (TrieGetCell(g_pItemsWithCmdAssoc, szCmd, iItem)) {
         SelectShopItem(player, iItem);
     }
+
+    return PLUGIN_HANDLED;
 }
 
 const KEY_BACK = 7;
@@ -167,14 +170,18 @@ CreateMenu(const player, const page, const bool: categories = false)
         bCategoryChoosed = true;
         iItemsVec = sCategoryData[CategoryItems];
     }
-    
+
     for (new i, item; i < ArraySize(categories ? g_pCategoriesVec : iItemsVec); i++) {
-        if ((!categories && (item = bCategoryChoosed ? ArrayGetCell(sCategoryData[CategoryItems], i) : i) < 0 || !GetItemData(player, item, sItemData))
-            || categories && !ArrayGetArray(g_pCategoriesVec, i, sCategoryData) || !ArraySize(sCategoryData[CategoryItems])) {
+        if (categories && (!ArrayGetArray(g_pCategoriesVec, i, sCategoryData) || !ArraySize(sCategoryData[CategoryItems]))) {
             continue;
         }
 
         if (!categories) {
+            item = bCategoryChoosed ? ArrayGetCell(sCategoryData[CategoryItems], i) : i;
+            if (item < 0 || !GetItemData(player, item, sItemData)) {
+                continue;
+            }
+
             if (!ExecuteEventsHandle(Shop_AddItemToMenu, false, player, item) || !ExecuteEventsHandle(Shop_AddItemToMenu, true, player, item)) {
                 continue;
             }
@@ -996,6 +1003,16 @@ stock bool: CheckExistsCategories()
     }
 
     return false;
+}
+
+stock replace_allex(text[], maxlength, const search[], const replace[], searchLen = -1, replaceLen = -1, bool:caseSensitive = true)
+{
+    enum { NO_REPLACEMENTS_WERE = -1 };
+
+replaceLabel:
+    if (replace_stringex(text, maxlength, search, replace, searchLen, replaceLen, caseSensitive) != NO_REPLACEMENTS_WERE) {
+        goto replaceLabel;
+    }
 }
 
 /**************** END UTILS ****************/
