@@ -10,7 +10,7 @@
 #define SHOP_MAX_ITEM_NAME_LENGTH 128
 #define SHOP_MAX_KEY_LENGTH 32
 
-stock const ShopCategory: ShopOtherCategory;
+public stock const ShopCategory: ShopOtherCategory;
 
 enum ItemFlag (<<=1)
 {

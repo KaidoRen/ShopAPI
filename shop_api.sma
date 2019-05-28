@@ -59,7 +59,7 @@ new Array: g_pItemsVec, Array: g_pForwardsVec,
 Trie: g_pPlaceholdersAssoc, Trie: g_pPlayersDataAssoc,
 Array: g_pCategoriesVec, Trie: g_pItemsWithCmdAssoc;
 
-new g_sPlayerData[MAX_PLAYERS + 1][PlayerDataProperties];
+new g_sPlayerData[MAX_PLAYERS + 1][PlayerDataProperties], g_iOtherCategory;
 
 public plugin_init()
 {
@@ -82,6 +82,8 @@ public plugin_init()
     g_pCategoriesVec        = ArrayCreate(CategoryProperties);
 
     ShopCreateCategory(fmt("%L", LANG_SERVER, "SHOP_OTHER_CATEGORY_NAME"));
+
+    g_iOtherCategory = get_xvar_id("ShopOtherCategory");
 }
 
 public client_authorized(player, const authid[])
@@ -168,7 +170,7 @@ CreateMenu(const player, const page, const bool: categories = false)
     
     for (new i, item; i < ArraySize(categories ? g_pCategoriesVec : iItemsVec); i++) {
         if ((!categories && (item = bCategoryChoosed ? ArrayGetCell(sCategoryData[CategoryItems], i) : i) < 0 || !GetItemData(player, item, sItemData))
-            || categories && !ArrayGetArray(g_pCategoriesVec, i, sCategoryData)) {
+            || categories && !ArrayGetArray(g_pCategoriesVec, i, sCategoryData) || !ArraySize(sCategoryData[CategoryItems])) {
             continue;
         }
 
@@ -394,6 +396,8 @@ public NativeHandle_CreateCategory(amxx, params)
             DetachItemFromAnyCategories(iCategory, iItem);
         }
     }
+
+    iCategory && set_xvar_num(g_iOtherCategory, any: ShopOtherCategory + 1);
 
     return iCategory ? ArrayInsertArrayBefore(g_pCategoriesVec, ArraySize(g_pCategoriesVec) - 1, sCategoryData) : ArrayPushArray(g_pCategoriesVec, sCategoryData);
 }
@@ -984,8 +988,8 @@ stock bool: CheckExistsCategories()
     }
 
     new sCategoryData[CategoryProperties];
-    // without 0 ('other' category)
-    for (new i = 1; i < iSize; i++) {
+    // without last item ('other' category)
+    for (new i; i < iSize - 1; i++) {
         if (ArrayGetArray(g_pCategoriesVec, i, sCategoryData) && ArraySize(sCategoryData[CategoryItems])) {
             return true;
         }
