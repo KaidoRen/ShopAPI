@@ -100,27 +100,19 @@ public Shop_ItemBuyHandle(const player, const ShopItem: item, const BuyState: bu
         // You must be alive or dead to purchase this item
         client_print_color(player, print_team_default, "%s Для покупки этого предмета нужно быть %s.", CHAT_PREFIX, buyState == Buy_PlayerAlive ? "мертвым" : "живым");
     }
+    else if (buyState == Buy_AccessDenied) {
+        // Not enough rights for this item
+        client_print_color(player, print_team_default, "%s Недостаточно прав для этого предмета.", CHAT_PREFIX, iCost - cs_get_user_money(player));
+    }
     else if (buyState == Buy_OK) {
         // Successfully purchase
         client_print_color(player, print_team_default, "%s Вы купили предмет\4 %s\1 за\4 %i\1.", CHAT_PREFIX, szName, iCost);
 
         switch (ShopGetItemCustomData(item)) {
-            case ShopItem_Gravity: {
-                set_pev(player, pev_gravity, g_sItemData[ShopItem_Gravity][ItemAmount]);
-            }
-
-            case ShopItem_Speed: {
-                set_pev(player, pev_maxspeed, g_sItemData[ShopItem_Speed][ItemAmount]);
-            }
-
-            case ShopItem_HP: {
-                set_pev(player, pev_health, float(g_sItemData[ShopItem_HP][ItemAmount]));
-            }
-
-            case ShopItem_HE: {
-                give_item(player, "weapon_hegrenade");
-            }
-
+            case ShopItem_Gravity: set_pev(player, pev_gravity, g_sItemData[ShopItem_Gravity][ItemAmount]);
+            case ShopItem_Speed: set_pev(player, pev_maxspeed, g_sItemData[ShopItem_Speed][ItemAmount]);
+            case ShopItem_HP: set_pev(player, pev_health, float(g_sItemData[ShopItem_HP][ItemAmount]));
+            case ShopItem_HE: give_item(player, "weapon_hegrenade");
             case ShopItem_Deagle: {
                 if (user_has_weapon(player, CSW_DEAGLE)) {
                     // Deagle already exists
