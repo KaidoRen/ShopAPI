@@ -38,6 +38,7 @@ enum BuyState
     Buy_NotEnoughMoney,
     Buy_PlayerDead,
     Buy_PlayerAlive,
+    Buy_AccessDenied,
     Buy_OK
 };
 

@@ -222,6 +222,10 @@ SelectShopItem(const player, const item)
         ExecuteEventsHandle(Shop_ItemBuy, false, player, item, Buy_PlayerAlive);
         ExecuteEventsHandle(Shop_ItemBuy, true, player, item, Buy_PlayerAlive);
     }
+    else if (~get_user_flags(player) & sItemData[ItemAccess]) {
+        ExecuteEventsHandle(Shop_ItemBuy, false, player, item, Buy_AccessDenied);
+        ExecuteEventsHandle(Shop_ItemBuy, true, player, item, Buy_AccessDenied);
+    }
     else {
         new bSuccess = ExecuteEventsHandle(Shop_ItemBuy, false, player, item, Buy_OK);
         bSuccess && (bSuccess = ExecuteEventsHandle(Shop_ItemBuy, true, player, item, Buy_OK));
